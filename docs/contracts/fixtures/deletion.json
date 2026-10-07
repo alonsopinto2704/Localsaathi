@@ -1,0 +1,53 @@
+{
+  "fixtureVersion": 1,
+  "name": "deletion",
+  "synthetic": true,
+  "operation": "deleteListing (direct DELETE on provider_profiles) and deleteAccount (Edge Function delete-account)",
+  "notes": [
+    "Both are HARD deletes. Dart ProviderRepository.deleteListing is documented as 'soft-deletes' (provider_repository.dart:217) and ListingStatus.deleted exists in Dart, but SQL has no deleted status and cascades the row away (docs/backend-contract.md 4.6).",
+    "deleteAccount removes auth.users and cascades all public rows (consent, reports, engagement), but backend/supabase/functions/delete-account/index.ts does not delete Storage objects in provider-photos or credential-evidence, so files can outlive the account.",
+    "A DELETE on a row the caller does not own returns 204 with zero rows (RLS filters it), indistinguishable from success unless 'Prefer: return=representation' is sent and the result is counted."
+  ],
+  "deleteListing": {
+    "success": {
+      "request": {
+        "method": "DELETE",
+        "path": "/rest/v1/provider_profiles?id=eq.0f3c1a2e-7b44-4d0a-9a51-6c2d0e5b1a04",
+        "headers": {"authorization": "Bearer <user-jwt>", "prefer": "return=representation"}
+      },
+      "response": {"status": 200, "body": [{"id": "0f3c1a2e-7b44-4d0a-9a51-6c2d0e5b1a04"}]}
+    },
+    "error": {
+      "description": "Non-owner delete. Today: HTTP 200 with an empty array under return=representation (or 204 without it). Target: a delete_my_listing RPC raising not_owner.",
+      "request": {
+        "method": "DELETE",
+        "path": "/rest/v1/provider_profiles?id=eq.0f3c1a2e-7b44-4d0a-9a51-6c2d0e5b1a04",
+        "headers": {"authorization": "Bearer <other-user-jwt>", "prefer": "return=representation"}
+      },
+      "response": {
+        "status": 200,
+        "wireBody": [],
+        "normalized": {"httpStatus": 403, "body": {"error": {"code": "NOT_OWNER", "message": "You cannot delete another provider's listing."}}}
+      }
+    }
+  },
+  "deleteAccount": {
+    "success": {
+      "request": {
+        "method": "POST",
+        "path": "/functions/v1/delete-account",
+        "headers": {"authorization": "Bearer <user-jwt>"}
+      },
+      "response": {"status": 200, "headers": {"content-type": "application/json"}, "body": {"ok": true}}
+    },
+    "error": {
+      "description": "Missing or invalid JWT (index.ts lines 33-45). The function's own body uses bare snake_case 'not_authenticated', not the envelope; normalized form maps it to AUTH_REQUIRED.",
+      "request": {"method": "POST", "path": "/functions/v1/delete-account", "headers": {}},
+      "response": {
+        "status": 401,
+        "wireBody": {"error": "not_authenticated"},
+        "normalized": {"error": {"code": "AUTH_REQUIRED", "message": "Sign in again to delete your account."}}
+      }
+    }
+  }
+}

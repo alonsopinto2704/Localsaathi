@@ -1,0 +1,862 @@
+import '../../domain/models/location.dart';
+
+/// Compile-time seed data for the location hierarchy.
+///
+/// This is the *only* place a city's launch status is decided. Activating a
+/// market is a one-line data change here (or, in production, an update to the
+/// `cities.launch_status` column) and no screen code moves.
+///
+/// Nations are modelled in full even though only one market is live, because
+/// the requirement is a nationwide product with a Mumbai launch — not a Mumbai
+/// product that has to be redesigned later.
+class LocationSeed {
+  const LocationSeed._();
+
+  static const String countryId = 'in';
+
+  static const Country india = Country(
+    id: countryId,
+    name: 'India',
+    isoCode: 'IN',
+    dialCode: '91',
+    isActive: true,
+  );
+
+  /// All 28 states and 8 Union Territories.
+  static const List<StateRegion> states = <StateRegion>[
+    StateRegion(id: 'in-ap', countryId: countryId, name: 'Andhra Pradesh'),
+    StateRegion(id: 'in-ar', countryId: countryId, name: 'Arunachal Pradesh'),
+    StateRegion(id: 'in-as', countryId: countryId, name: 'Assam'),
+    StateRegion(id: 'in-br', countryId: countryId, name: 'Bihar'),
+    StateRegion(id: 'in-ct', countryId: countryId, name: 'Chhattisgarh'),
+    StateRegion(id: 'in-ga', countryId: countryId, name: 'Goa'),
+    StateRegion(id: 'in-gj', countryId: countryId, name: 'Gujarat'),
+    StateRegion(id: 'in-hr', countryId: countryId, name: 'Haryana'),
+    StateRegion(id: 'in-hp', countryId: countryId, name: 'Himachal Pradesh'),
+    StateRegion(id: 'in-jh', countryId: countryId, name: 'Jharkhand'),
+    StateRegion(id: 'in-ka', countryId: countryId, name: 'Karnataka'),
+    StateRegion(id: 'in-kl', countryId: countryId, name: 'Kerala'),
+    StateRegion(id: 'in-mp', countryId: countryId, name: 'Madhya Pradesh'),
+    StateRegion(
+      id: 'in-mh',
+      countryId: countryId,
+      name: 'Maharashtra',
+      isActive: true,
+    ),
+    StateRegion(id: 'in-mn', countryId: countryId, name: 'Manipur'),
+    StateRegion(id: 'in-ml', countryId: countryId, name: 'Meghalaya'),
+    StateRegion(id: 'in-mz', countryId: countryId, name: 'Mizoram'),
+    StateRegion(id: 'in-nl', countryId: countryId, name: 'Nagaland'),
+    StateRegion(id: 'in-or', countryId: countryId, name: 'Odisha'),
+    StateRegion(id: 'in-pb', countryId: countryId, name: 'Punjab'),
+    StateRegion(id: 'in-rj', countryId: countryId, name: 'Rajasthan'),
+    StateRegion(id: 'in-sk', countryId: countryId, name: 'Sikkim'),
+    StateRegion(id: 'in-tn', countryId: countryId, name: 'Tamil Nadu'),
+    StateRegion(id: 'in-tg', countryId: countryId, name: 'Telangana'),
+    StateRegion(id: 'in-tr', countryId: countryId, name: 'Tripura'),
+    StateRegion(id: 'in-up', countryId: countryId, name: 'Uttar Pradesh'),
+    StateRegion(id: 'in-ut', countryId: countryId, name: 'Uttarakhand'),
+    StateRegion(id: 'in-wb', countryId: countryId, name: 'West Bengal'),
+    // Union Territories.
+    StateRegion(
+      id: 'in-an',
+      countryId: countryId,
+      name: 'Andaman and Nicobar Islands',
+      isUnionTerritory: true,
+    ),
+    StateRegion(
+      id: 'in-ch',
+      countryId: countryId,
+      name: 'Chandigarh',
+      isUnionTerritory: true,
+    ),
+    StateRegion(
+      id: 'in-dh',
+      countryId: countryId,
+      name: 'Dadra and Nagar Haveli and Daman and Diu',
+      isUnionTerritory: true,
+    ),
+    StateRegion(
+      id: 'in-dl',
+      countryId: countryId,
+      name: 'Delhi',
+      isUnionTerritory: true,
+    ),
+    StateRegion(
+      id: 'in-jk',
+      countryId: countryId,
+      name: 'Jammu and Kashmir',
+      isUnionTerritory: true,
+    ),
+    StateRegion(
+      id: 'in-la',
+      countryId: countryId,
+      name: 'Ladakh',
+      isUnionTerritory: true,
+    ),
+    StateRegion(
+      id: 'in-ld',
+      countryId: countryId,
+      name: 'Lakshadweep',
+      isUnionTerritory: true,
+    ),
+    StateRegion(
+      id: 'in-py',
+      countryId: countryId,
+      name: 'Puducherry',
+      isUnionTerritory: true,
+    ),
+  ];
+
+  /// Cities with their launch status.
+  ///
+  /// Only Mumbai is [CityLaunchStatus.active]. Thane, Navi Mumbai and
+  /// Vasai-Virar are their own markets with their own status — deliberately not
+  /// folded into Mumbai, per the requirement that surrounding cities are
+  /// separately configurable.
+  static const List<City> cities = <City>[
+    // ---------------------------------------------------------- Maharashtra
+    City(
+      id: 'mh-mumbai',
+      stateId: 'in-mh',
+      name: 'Mumbai',
+      launchStatus: CityLaunchStatus.active,
+      isMetro: true,
+    ),
+    City(
+      id: 'mh-thane',
+      stateId: 'in-mh',
+      name: 'Thane',
+      launchStatus: CityLaunchStatus.comingSoon,
+      aliases: <String>['Thane City'],
+      isMetro: true,
+    ),
+    City(
+      id: 'mh-navi-mumbai',
+      stateId: 'in-mh',
+      name: 'Navi Mumbai',
+      launchStatus: CityLaunchStatus.comingSoon,
+      aliases: <String>['New Bombay'],
+      isMetro: true,
+    ),
+    City(
+      id: 'mh-vasai-virar',
+      stateId: 'in-mh',
+      name: 'Vasai-Virar',
+      launchStatus: CityLaunchStatus.comingSoon,
+      aliases: <String>['Vasai', 'Virar'],
+    ),
+    City(
+      id: 'mh-pune',
+      stateId: 'in-mh',
+      name: 'Pune',
+      launchStatus: CityLaunchStatus.comingSoon,
+      aliases: <String>['Poona'],
+      isMetro: true,
+    ),
+    City(
+      id: 'mh-nagpur',
+      stateId: 'in-mh',
+      name: 'Nagpur',
+      launchStatus: CityLaunchStatus.comingSoon,
+    ),
+    City(
+      id: 'mh-nashik',
+      stateId: 'in-mh',
+      name: 'Nashik',
+      launchStatus: CityLaunchStatus.comingSoon,
+    ),
+    City(
+      id: 'mh-aurangabad',
+      stateId: 'in-mh',
+      name: 'Chhatrapati Sambhajinagar',
+      launchStatus: CityLaunchStatus.comingSoon,
+      aliases: <String>['Aurangabad'],
+    ),
+    // ------------------------------------------------------- other metros
+    City(
+      id: 'dl-new-delhi',
+      stateId: 'in-dl',
+      name: 'New Delhi',
+      launchStatus: CityLaunchStatus.comingSoon,
+      aliases: <String>['Delhi', 'NCR'],
+      isMetro: true,
+    ),
+    City(
+      id: 'ka-bengaluru',
+      stateId: 'in-ka',
+      name: 'Bengaluru',
+      launchStatus: CityLaunchStatus.comingSoon,
+      aliases: <String>['Bangalore'],
+      isMetro: true,
+    ),
+    City(
+      id: 'tg-hyderabad',
+      stateId: 'in-tg',
+      name: 'Hyderabad',
+      launchStatus: CityLaunchStatus.comingSoon,
+      isMetro: true,
+    ),
+    City(
+      id: 'tn-chennai',
+      stateId: 'in-tn',
+      name: 'Chennai',
+      launchStatus: CityLaunchStatus.comingSoon,
+      aliases: <String>['Madras'],
+      isMetro: true,
+    ),
+    City(
+      id: 'wb-kolkata',
+      stateId: 'in-wb',
+      name: 'Kolkata',
+      launchStatus: CityLaunchStatus.comingSoon,
+      aliases: <String>['Calcutta'],
+      isMetro: true,
+    ),
+    City(
+      id: 'gj-ahmedabad',
+      stateId: 'in-gj',
+      name: 'Ahmedabad',
+      launchStatus: CityLaunchStatus.comingSoon,
+      isMetro: true,
+    ),
+    City(
+      id: 'rj-jaipur',
+      stateId: 'in-rj',
+      name: 'Jaipur',
+      launchStatus: CityLaunchStatus.comingSoon,
+      isMetro: true,
+    ),
+    City(
+      id: 'up-lucknow',
+      stateId: 'in-up',
+      name: 'Lucknow',
+      launchStatus: CityLaunchStatus.comingSoon,
+      isMetro: true,
+    ),
+    City(
+      id: 'up-kanpur',
+      stateId: 'in-up',
+      name: 'Kanpur',
+      launchStatus: CityLaunchStatus.comingSoon,
+    ),
+    City(
+      id: 'up-varanasi',
+      stateId: 'in-up',
+      name: 'Varanasi',
+      launchStatus: CityLaunchStatus.comingSoon,
+      aliases: <String>['Banaras', 'Kashi'],
+    ),
+    City(
+      id: 'up-agra',
+      stateId: 'in-up',
+      name: 'Agra',
+      launchStatus: CityLaunchStatus.comingSoon,
+    ),
+    City(
+      id: 'mp-indore',
+      stateId: 'in-mp',
+      name: 'Indore',
+      launchStatus: CityLaunchStatus.comingSoon,
+    ),
+    City(
+      id: 'mp-bhopal',
+      stateId: 'in-mp',
+      name: 'Bhopal',
+      launchStatus: CityLaunchStatus.comingSoon,
+    ),
+    City(
+      id: 'gj-surat',
+      stateId: 'in-gj',
+      name: 'Surat',
+      launchStatus: CityLaunchStatus.comingSoon,
+    ),
+    City(
+      id: 'gj-vadodara',
+      stateId: 'in-gj',
+      name: 'Vadodara',
+      launchStatus: CityLaunchStatus.comingSoon,
+      aliases: <String>['Baroda'],
+    ),
+    City(
+      id: 'ka-mysuru',
+      stateId: 'in-ka',
+      name: 'Mysuru',
+      launchStatus: CityLaunchStatus.comingSoon,
+      aliases: <String>['Mysore'],
+    ),
+    City(
+      id: 'ka-mangaluru',
+      stateId: 'in-ka',
+      name: 'Mangaluru',
+      launchStatus: CityLaunchStatus.comingSoon,
+      aliases: <String>['Mangalore'],
+    ),
+    City(
+      id: 'kl-thiruvananthapuram',
+      stateId: 'in-kl',
+      name: 'Thiruvananthapuram',
+      launchStatus: CityLaunchStatus.comingSoon,
+      aliases: <String>['Trivandrum'],
+    ),
+    City(
+      id: 'kl-kochi',
+      stateId: 'in-kl',
+      name: 'Kochi',
+      launchStatus: CityLaunchStatus.comingSoon,
+      aliases: <String>['Cochin', 'Ernakulam'],
+    ),
+    City(
+      id: 'kl-kozhikode',
+      stateId: 'in-kl',
+      name: 'Kozhikode',
+      launchStatus: CityLaunchStatus.comingSoon,
+      aliases: <String>['Calicut'],
+    ),
+    City(
+      id: 'tn-coimbatore',
+      stateId: 'in-tn',
+      name: 'Coimbatore',
+      launchStatus: CityLaunchStatus.comingSoon,
+    ),
+    City(
+      id: 'tn-madurai',
+      stateId: 'in-tn',
+      name: 'Madurai',
+      launchStatus: CityLaunchStatus.comingSoon,
+    ),
+    City(
+      id: 'ap-visakhapatnam',
+      stateId: 'in-ap',
+      name: 'Visakhapatnam',
+      launchStatus: CityLaunchStatus.comingSoon,
+      aliases: <String>['Vizag'],
+    ),
+    City(
+      id: 'ap-vijayawada',
+      stateId: 'in-ap',
+      name: 'Vijayawada',
+      launchStatus: CityLaunchStatus.comingSoon,
+    ),
+    City(
+      id: 'tg-warangal',
+      stateId: 'in-tg',
+      name: 'Warangal',
+      launchStatus: CityLaunchStatus.comingSoon,
+    ),
+    City(
+      id: 'br-patna',
+      stateId: 'in-br',
+      name: 'Patna',
+      launchStatus: CityLaunchStatus.comingSoon,
+    ),
+    City(
+      id: 'br-gaya',
+      stateId: 'in-br',
+      name: 'Gaya',
+      launchStatus: CityLaunchStatus.comingSoon,
+    ),
+    City(
+      id: 'jh-ranchi',
+      stateId: 'in-jh',
+      name: 'Ranchi',
+      launchStatus: CityLaunchStatus.comingSoon,
+    ),
+    City(
+      id: 'or-bhubaneswar',
+      stateId: 'in-or',
+      name: 'Bhubaneswar',
+      launchStatus: CityLaunchStatus.comingSoon,
+    ),
+    City(
+      id: 'or-cuttack',
+      stateId: 'in-or',
+      name: 'Cuttack',
+      launchStatus: CityLaunchStatus.comingSoon,
+    ),
+    City(
+      id: 'ct-raipur',
+      stateId: 'in-ct',
+      name: 'Raipur',
+      launchStatus: CityLaunchStatus.comingSoon,
+    ),
+    City(
+      id: 'as-guwahati',
+      stateId: 'in-as',
+      name: 'Guwahati',
+      launchStatus: CityLaunchStatus.comingSoon,
+    ),
+    City(
+      id: 'pb-ludhiana',
+      stateId: 'in-pb',
+      name: 'Ludhiana',
+      launchStatus: CityLaunchStatus.comingSoon,
+    ),
+    City(
+      id: 'pb-amritsar',
+      stateId: 'in-pb',
+      name: 'Amritsar',
+      launchStatus: CityLaunchStatus.comingSoon,
+    ),
+    City(
+      id: 'ch-chandigarh',
+      stateId: 'in-ch',
+      name: 'Chandigarh',
+      launchStatus: CityLaunchStatus.comingSoon,
+      isMetro: true,
+    ),
+    City(
+      id: 'hr-gurugram',
+      stateId: 'in-hr',
+      name: 'Gurugram',
+      launchStatus: CityLaunchStatus.comingSoon,
+      aliases: <String>['Gurgaon'],
+    ),
+    City(
+      id: 'hr-faridabad',
+      stateId: 'in-hr',
+      name: 'Faridabad',
+      launchStatus: CityLaunchStatus.comingSoon,
+    ),
+    City(
+      id: 'ut-dehradun',
+      stateId: 'in-ut',
+      name: 'Dehradun',
+      launchStatus: CityLaunchStatus.comingSoon,
+    ),
+    City(
+      id: 'hp-shimla',
+      stateId: 'in-hp',
+      name: 'Shimla',
+      launchStatus: CityLaunchStatus.comingSoon,
+    ),
+    City(
+      id: 'jk-srinagar',
+      stateId: 'in-jk',
+      name: 'Srinagar',
+      launchStatus: CityLaunchStatus.comingSoon,
+    ),
+    City(
+      id: 'jk-jammu',
+      stateId: 'in-jk',
+      name: 'Jammu',
+      launchStatus: CityLaunchStatus.comingSoon,
+    ),
+    City(
+      id: 'ga-panaji',
+      stateId: 'in-ga',
+      name: 'Panaji',
+      launchStatus: CityLaunchStatus.comingSoon,
+      aliases: <String>['Panjim'],
+    ),
+    City(
+      id: 'py-puducherry',
+      stateId: 'in-py',
+      name: 'Puducherry',
+      launchStatus: CityLaunchStatus.comingSoon,
+      aliases: <String>['Pondicherry'],
+    ),
+    City(
+      id: 'ml-shillong',
+      stateId: 'in-ml',
+      name: 'Shillong',
+      launchStatus: CityLaunchStatus.comingSoon,
+    ),
+    City(
+      id: 'mn-imphal',
+      stateId: 'in-mn',
+      name: 'Imphal',
+      launchStatus: CityLaunchStatus.comingSoon,
+    ),
+    City(
+      id: 'mz-aizawl',
+      stateId: 'in-mz',
+      name: 'Aizawl',
+      launchStatus: CityLaunchStatus.comingSoon,
+    ),
+    City(
+      id: 'nl-kohima',
+      stateId: 'in-nl',
+      name: 'Kohima',
+      launchStatus: CityLaunchStatus.comingSoon,
+    ),
+    City(
+      id: 'tr-agartala',
+      stateId: 'in-tr',
+      name: 'Agartala',
+      launchStatus: CityLaunchStatus.comingSoon,
+    ),
+    City(
+      id: 'sk-gangtok',
+      stateId: 'in-sk',
+      name: 'Gangtok',
+      launchStatus: CityLaunchStatus.comingSoon,
+    ),
+    City(
+      id: 'ar-itanagar',
+      stateId: 'in-ar',
+      name: 'Itanagar',
+      launchStatus: CityLaunchStatus.comingSoon,
+    ),
+    City(
+      id: 'ld-kavaratti',
+      stateId: 'in-ld',
+      name: 'Kavaratti',
+      launchStatus: CityLaunchStatus.comingSoon,
+    ),
+    City(
+      id: 'an-port-blair',
+      stateId: 'in-an',
+      name: 'Port Blair',
+      launchStatus: CityLaunchStatus.comingSoon,
+    ),
+    City(
+      id: 'dh-silvassa',
+      stateId: 'in-dh',
+      name: 'Silvassa',
+      launchStatus: CityLaunchStatus.comingSoon,
+    ),
+    City(
+      id: 'la-leh',
+      stateId: 'in-la',
+      name: 'Leh',
+      launchStatus: CityLaunchStatus.comingSoon,
+    ),
+  ];
+
+  /// Localities.
+  ///
+  /// Mumbai is fully populated because it is the launch market. Every other
+  /// city carries a couple of representative localities so the picker, the
+  /// provider service-area selector and the seed data all exercise the same
+  /// code path — proving that activating a city is a data change, not a code
+  /// change.
+  ///
+  /// PIN codes are approximate public reference values for convenience only;
+  /// they are never used as identifiers because a locality can span several.
+  static const List<Locality> localities = <Locality>[
+    // ------------------------------------------------------- Mumbai (active)
+    Locality(
+      id: 'mh-mumbai-andheri-west',
+      cityId: 'mh-mumbai',
+      name: 'Andheri West',
+      pinCode: '400058',
+      isPopular: true,
+    ),
+    Locality(
+      id: 'mh-mumbai-andheri-east',
+      cityId: 'mh-mumbai',
+      name: 'Andheri East',
+      pinCode: '400069',
+      isPopular: true,
+    ),
+    Locality(
+      id: 'mh-mumbai-jogeshwari',
+      cityId: 'mh-mumbai',
+      name: 'Jogeshwari',
+    ),
+    Locality(
+      id: 'mh-mumbai-goregaon',
+      cityId: 'mh-mumbai',
+      name: 'Goregaon',
+      isPopular: true,
+    ),
+    Locality(
+      id: 'mh-mumbai-malad',
+      cityId: 'mh-mumbai',
+      name: 'Malad',
+    ),
+    Locality(
+      id: 'mh-mumbai-kandivali',
+      cityId: 'mh-mumbai',
+      name: 'Kandivali',
+    ),
+    Locality(
+      id: 'mh-mumbai-borivali-west',
+      cityId: 'mh-mumbai',
+      name: 'Borivali West',
+      pinCode: '400092',
+      isPopular: true,
+    ),
+    Locality(
+      id: 'mh-mumbai-borivali-east',
+      cityId: 'mh-mumbai',
+      name: 'Borivali East',
+    ),
+    Locality(
+      id: 'mh-mumbai-dahisar',
+      cityId: 'mh-mumbai',
+      name: 'Dahisar',
+    ),
+    Locality(
+      id: 'mh-mumbai-bandra-west',
+      cityId: 'mh-mumbai',
+      name: 'Bandra West',
+      pinCode: '400050',
+      isPopular: true,
+    ),
+    Locality(
+      id: 'mh-mumbai-bandra-east',
+      cityId: 'mh-mumbai',
+      name: 'Bandra East',
+    ),
+    Locality(
+      id: 'mh-mumbai-khar',
+      cityId: 'mh-mumbai',
+      name: 'Khar',
+    ),
+    Locality(
+      id: 'mh-mumbai-santacruz',
+      cityId: 'mh-mumbai',
+      name: 'Santacruz',
+    ),
+    Locality(
+      id: 'mh-mumbai-vile-parle',
+      cityId: 'mh-mumbai',
+      name: 'Vile Parle',
+    ),
+    Locality(
+      id: 'mh-mumbai-juhu',
+      cityId: 'mh-mumbai',
+      name: 'Juhu',
+    ),
+    Locality(
+      id: 'mh-mumbai-powai',
+      cityId: 'mh-mumbai',
+      name: 'Powai',
+      pinCode: '400076',
+      isPopular: true,
+    ),
+    Locality(
+      id: 'mh-mumbai-vikhroli',
+      cityId: 'mh-mumbai',
+      name: 'Vikhroli',
+    ),
+    Locality(
+      id: 'mh-mumbai-ghatkopar',
+      cityId: 'mh-mumbai',
+      name: 'Ghatkopar',
+      isPopular: true,
+    ),
+    Locality(
+      id: 'mh-mumbai-bhandup',
+      cityId: 'mh-mumbai',
+      name: 'Bhandup',
+    ),
+    Locality(
+      id: 'mh-mumbai-mulund',
+      cityId: 'mh-mumbai',
+      name: 'Mulund',
+    ),
+    Locality(
+      id: 'mh-mumbai-chembur',
+      cityId: 'mh-mumbai',
+      name: 'Chembur',
+      pinCode: '400071',
+      isPopular: true,
+    ),
+    Locality(
+      id: 'mh-mumbai-kurla',
+      cityId: 'mh-mumbai',
+      name: 'Kurla',
+      pinCode: '400070',
+      isPopular: true,
+    ),
+    Locality(
+      id: 'mh-mumbai-sion',
+      cityId: 'mh-mumbai',
+      name: 'Sion',
+    ),
+    Locality(
+      id: 'mh-mumbai-wadala',
+      cityId: 'mh-mumbai',
+      name: 'Wadala',
+    ),
+    Locality(
+      id: 'mh-mumbai-dadar-west',
+      cityId: 'mh-mumbai',
+      name: 'Dadar West',
+      pinCode: '400028',
+      isPopular: true,
+    ),
+    Locality(
+      id: 'mh-mumbai-dadar-east',
+      cityId: 'mh-mumbai',
+      name: 'Dadar East',
+    ),
+    Locality(
+      id: 'mh-mumbai-parel',
+      cityId: 'mh-mumbai',
+      name: 'Parel',
+    ),
+    Locality(
+      id: 'mh-mumbai-lower-parel',
+      cityId: 'mh-mumbai',
+      name: 'Lower Parel',
+    ),
+    Locality(
+      id: 'mh-mumbai-worli',
+      cityId: 'mh-mumbai',
+      name: 'Worli',
+    ),
+    Locality(
+      id: 'mh-mumbai-prabhadevi',
+      cityId: 'mh-mumbai',
+      name: 'Prabhadevi',
+    ),
+    Locality(
+      id: 'mh-mumbai-mahim',
+      cityId: 'mh-mumbai',
+      name: 'Mahim',
+    ),
+    Locality(
+      id: 'mh-mumbai-matunga',
+      cityId: 'mh-mumbai',
+      name: 'Matunga',
+    ),
+    Locality(
+      id: 'mh-mumbai-colaba',
+      cityId: 'mh-mumbai',
+      name: 'Colaba',
+      pinCode: '400005',
+      isPopular: true,
+    ),
+    Locality(
+      id: 'mh-mumbai-fort',
+      cityId: 'mh-mumbai',
+      name: 'Fort',
+    ),
+    Locality(
+      id: 'mh-mumbai-churchgate',
+      cityId: 'mh-mumbai',
+      name: 'Churchgate',
+    ),
+    Locality(
+      id: 'mh-mumbai-marine-lines',
+      cityId: 'mh-mumbai',
+      name: 'Marine Lines',
+    ),
+    Locality(
+      id: 'mh-mumbai-charni-road',
+      cityId: 'mh-mumbai',
+      name: 'Charni Road',
+    ),
+    Locality(
+      id: 'mh-mumbai-malabar-hill',
+      cityId: 'mh-mumbai',
+      name: 'Malabar Hill',
+    ),
+    Locality(
+      id: 'mh-mumbai-byculla',
+      cityId: 'mh-mumbai',
+      name: 'Byculla',
+    ),
+    Locality(
+      id: 'mh-mumbai-mazgaon',
+      cityId: 'mh-mumbai',
+      name: 'Mazgaon',
+    ),
+    Locality(
+      id: 'mh-mumbai-wadala-sewri',
+      cityId: 'mh-mumbai',
+      name: 'Sewri',
+    ),
+    Locality(
+      id: 'mh-mumbai-mankhurd',
+      cityId: 'mh-mumbai',
+      name: 'Mankhurd',
+    ),
+    Locality(
+      id: 'mh-mumbai-kanjurmarg',
+      cityId: 'mh-mumbai',
+      name: 'Kanjurmarg',
+    ),
+
+    // --------------------------------------- coming-soon cities (Mumbai MMR)
+    // Listed separately on purpose: these are NOT part of Mumbai.
+    Locality(id: 'mh-thane-naupada', cityId: 'mh-thane', name: 'Naupada'),
+    Locality(id: 'mh-thane-ghodbunder', cityId: 'mh-thane', name: 'Ghodbunder Road'),
+    Locality(id: 'mh-navi-mumbai-vashi', cityId: 'mh-navi-mumbai', name: 'Vashi'),
+    Locality(id: 'mh-navi-mumbai-nerul', cityId: 'mh-navi-mumbai', name: 'Nerul'),
+    Locality(id: 'mh-vasai-virar-vasai-west', cityId: 'mh-vasai-virar', name: 'Vasai West'),
+    Locality(id: 'mh-vasai-virar-virar-east', cityId: 'mh-vasai-virar', name: 'Virar East'),
+    Locality(id: 'mh-pune-kothrud', cityId: 'mh-pune', name: 'Kothrud'),
+    Locality(id: 'mh-pune-hadapsar', cityId: 'mh-pune', name: 'Hadapsar'),
+    Locality(id: 'mh-pune-baner', cityId: 'mh-pune', name: 'Baner'),
+    Locality(id: 'mh-nagpur-dharampeth', cityId: 'mh-nagpur', name: 'Dharampeth'),
+    Locality(id: 'mh-nagpur-sitabuldi', cityId: 'mh-nagpur', name: 'Sitabuldi'),
+    Locality(id: 'mh-nashik-panchavati', cityId: 'mh-nashik', name: 'Panchavati'),
+    Locality(id: 'mh-nashik-college-road', cityId: 'mh-nashik', name: 'College Road'),
+    Locality(id: 'mh-aurangabad-cidco', cityId: 'mh-aurangabad', name: 'Cidco'),
+    Locality(id: 'mh-aurangabad-kranti-chowk', cityId: 'mh-aurangabad', name: 'Kranti Chowk'),
+
+    // ------------------------------------------------------- other states
+    Locality(id: 'dl-new-delhi-cp', cityId: 'dl-new-delhi', name: 'Connaught Place'),
+    Locality(id: 'dl-new-delhi-saket', cityId: 'dl-new-delhi', name: 'Saket'),
+    Locality(id: 'dl-new-delhi-rohini', cityId: 'dl-new-delhi', name: 'Rohini'),
+    Locality(id: 'ka-bengaluru-indiranagar', cityId: 'ka-bengaluru', name: 'Indiranagar'),
+    Locality(id: 'ka-bengaluru-jayanagar', cityId: 'ka-bengaluru', name: 'Jayanagar'),
+    Locality(id: 'ka-bengaluru-whitefield', cityId: 'ka-bengaluru', name: 'Whitefield'),
+    Locality(id: 'tg-hyderabad-banjara-hills', cityId: 'tg-hyderabad', name: 'Banjara Hills'),
+    Locality(id: 'tg-hyderabad-kukatpally', cityId: 'tg-hyderabad', name: 'Kukatpally'),
+    Locality(id: 'tn-chennai-t-nagar', cityId: 'tn-chennai', name: 'T. Nagar'),
+    Locality(id: 'tn-chennai-adyar', cityId: 'tn-chennai', name: 'Adyar'),
+    Locality(id: 'wb-kolkata-salt-lake', cityId: 'wb-kolkata', name: 'Salt Lake'),
+    Locality(id: 'wb-kolkata-howrah', cityId: 'wb-kolkata', name: 'Howrah'),
+    Locality(id: 'gj-ahmedabad-navrangpura', cityId: 'gj-ahmedabad', name: 'Navrangpura'),
+    Locality(id: 'gj-ahmedabad-maninagar', cityId: 'gj-ahmedabad', name: 'Maninagar'),
+    Locality(id: 'rj-jaipur-malviya-nagar', cityId: 'rj-jaipur', name: 'Malviya Nagar'),
+    Locality(id: 'rj-jaipur-vaishali-nagar', cityId: 'rj-jaipur', name: 'Vaishali Nagar'),
+    Locality(id: 'up-lucknow-gomti-nagar', cityId: 'up-lucknow', name: 'Gomti Nagar'),
+    Locality(id: 'up-lucknow-hazratganj', cityId: 'up-lucknow', name: 'Hazratganj'),
+    Locality(id: 'up-kanpur-swaroop-nagar', cityId: 'up-kanpur', name: 'Swaroop Nagar'),
+    Locality(id: 'up-varanasi-lanka', cityId: 'up-varanasi', name: 'Lanka'),
+    Locality(id: 'up-agra-dayalbagh', cityId: 'up-agra', name: 'Dayalbagh'),
+    Locality(id: 'mp-indore-vijay-nagar', cityId: 'mp-indore', name: 'Vijay Nagar'),
+    Locality(id: 'mp-bhopal-mp-nagar', cityId: 'mp-bhopal', name: 'M.P. Nagar'),
+    Locality(id: 'gj-surat-adajan', cityId: 'gj-surat', name: 'Adajan'),
+    Locality(id: 'gj-vadodara-alkapuri', cityId: 'gj-vadodara', name: 'Alkapuri'),
+    Locality(id: 'ka-mysuru-vijayanagar', cityId: 'ka-mysuru', name: 'Vijayanagar'),
+    Locality(id: 'ka-mangaluru-kadri', cityId: 'ka-mangaluru', name: 'Kadri'),
+    Locality(id: 'kl-thiruvananthapuram-kowdiar', cityId: 'kl-thiruvananthapuram', name: 'Kowdiar'),
+    Locality(id: 'kl-kochi-kakkanad', cityId: 'kl-kochi', name: 'Kakkanad'),
+    Locality(id: 'kl-kozhikode-mavoor-road', cityId: 'kl-kozhikode', name: 'Mavoor Road'),
+    Locality(id: 'tn-coimbatore-rs-puram', cityId: 'tn-coimbatore', name: 'R.S. Puram'),
+    Locality(id: 'tn-madurai-anna-nagar', cityId: 'tn-madurai', name: 'Anna Nagar'),
+    Locality(id: 'ap-visakhapatnam-mvp-colony', cityId: 'ap-visakhapatnam', name: 'MVP Colony'),
+    Locality(id: 'ap-vijayawada-benz-circle', cityId: 'ap-vijayawada', name: 'Benz Circle'),
+    Locality(id: 'tg-warangal-hanamkonda', cityId: 'tg-warangal', name: 'Hanamkonda'),
+    Locality(id: 'br-patna-boring-road', cityId: 'br-patna', name: 'Boring Road'),
+    Locality(id: 'br-gaya-ashok-nagar', cityId: 'br-gaya', name: 'Ashok Nagar'),
+    Locality(id: 'jh-ranchi-lalpur', cityId: 'jh-ranchi', name: 'Lalpur'),
+    Locality(id: 'or-bhubaneswar-saheed-nagar', cityId: 'or-bhubaneswar', name: 'Saheed Nagar'),
+    Locality(id: 'or-cuttack-buxi-bazar', cityId: 'or-cuttack', name: 'Buxi Bazar'),
+    Locality(id: 'ct-raipur-shankar-nagar', cityId: 'ct-raipur', name: 'Shankar Nagar'),
+    Locality(id: 'as-guwahati-g-s-road', cityId: 'as-guwahati', name: 'G.S. Road'),
+    Locality(id: 'pb-ludhiana-sarabha-nagar', cityId: 'pb-ludhiana', name: 'Sarabha Nagar'),
+    Locality(id: 'pb-amritsar-ranjit-avenue', cityId: 'pb-amritsar', name: 'Ranjit Avenue'),
+    Locality(id: 'ch-chandigarh-sector-17', cityId: 'ch-chandigarh', name: 'Sector 17'),
+    Locality(id: 'hr-gurugram-sector-29', cityId: 'hr-gurugram', name: 'Sector 29'),
+    Locality(id: 'hr-faridabad-sector-15', cityId: 'hr-faridabad', name: 'Sector 15'),
+    Locality(id: 'ut-dehradun-rajpur-road', cityId: 'ut-dehradun', name: 'Rajpur Road'),
+    Locality(id: 'hp-shimla-mall-road', cityId: 'hp-shimla', name: 'Mall Road'),
+    Locality(id: 'jk-srinagar-lal-chowk', cityId: 'jk-srinagar', name: 'Lal Chowk'),
+    Locality(id: 'jk-jammu-gandhi-nagar', cityId: 'jk-jammu', name: 'Gandhi Nagar'),
+    Locality(id: 'ga-panaji-mirama', cityId: 'ga-panaji', name: 'Miramar'),
+    Locality(id: 'py-puducherry-heritage-town', cityId: 'py-puducherry', name: 'Heritage Town'),
+    Locality(id: 'ml-shillong-laitumkhrah', cityId: 'ml-shillong', name: 'Laitumkhrah'),
+    Locality(id: 'mn-imphal-thangmeiband', cityId: 'mn-imphal', name: 'Thangmeiband'),
+    Locality(id: 'mz-aizawl-chanmari', cityId: 'mz-aizawl', name: 'Chanmari'),
+    Locality(id: 'nl-kohima-dimapur', cityId: 'nl-kohima', name: 'Dimapur Road'),
+    Locality(id: 'tr-agartala-banamalipur', cityId: 'tr-agartala', name: 'Banamalipur'),
+    Locality(id: 'sk-gangtok-mg-marg', cityId: 'sk-gangtok', name: 'M.G. Marg'),
+    Locality(id: 'ar-itanagar-ganga-market', cityId: 'ar-itanagar', name: 'Ganga Market'),
+    Locality(id: 'ld-kavaratti-main-island', cityId: 'ld-kavaratti', name: 'Main Island'),
+    Locality(id: 'an-port-blair-aberdeen', cityId: 'an-port-blair', name: 'Aberdeen Bazaar'),
+    Locality(id: 'dh-silvassa-amli', cityId: 'dh-silvassa', name: 'Amli'),
+    Locality(id: 'la-leh-main-bazaar', cityId: 'la-leh', name: 'Main Bazaar'),
+  ];
+
+  /// Convenience: the launch market id, used only as a default in config.
+  static const String launchCityId = 'mh-mumbai';
+}

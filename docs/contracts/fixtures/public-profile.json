@@ -1,0 +1,82 @@
+{
+  "fixtureVersion": 1,
+  "name": "public-profile",
+  "synthetic": true,
+  "operation": "rpc get_public_profile (ProviderRepository.publicProfileById)",
+  "notes": [
+    "Healthcare details are provider-claimed, never verified; verification.credentials appears only after admin review.",
+    "mapLocation is the exact pin the provider opted into (consent kind show_map_location); a target projection may round it to approximate for non-premises providers.",
+    "moderationStatus is stripped by get_public_profile (migration 0008 line 177)."
+  ],
+  "success": {
+    "request": {
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_public_profile",
+      "headers": {"apikey": "<anon-key>"},
+      "body": {"p_id": "0f3c1a2e-7b44-4d0a-9a51-6c2d0e5b1a03"}
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "id": "0f3c1a2e-7b44-4d0a-9a51-6c2d0e5b1a03",
+        "phoneE164": "+919800340000",
+        "displayName": "Demo Smile Dental Clinic",
+        "baseCityId": "mh-mumbai",
+        "baseLocalityId": "mh-mumbai-bandra-west",
+        "status": "published",
+        "createdAt": "2026-08-20T09:00:00+00:00",
+        "updatedAt": "2026-09-25T12:45:00+00:00",
+        "categoryIds": ["dentist"],
+        "serviceAreas": [
+          {"cityId": "mh-mumbai", "localityId": "mh-mumbai-bandra-west", "pinCodes": ["400050"], "isPrimary": true}
+        ],
+        "description": "General dentistry and scaling. Appointments preferred.",
+        "languages": ["en", "hi", "mr"],
+        "workingHours": {
+          "days": [
+            {"weekday": 1, "open": 600, "close": 1080},
+            {"weekday": 2, "open": 600, "close": 1080},
+            {"weekday": 3, "open": 600, "close": 1080},
+            {"weekday": 4, "open": 600, "close": 1080},
+            {"weekday": 5, "open": 600, "close": 1080},
+            {"weekday": 6, "open": 600, "close": 840},
+            {"weekday": 7, "open": null, "close": null}
+          ]
+        },
+        "photos": [],
+        "startingPrices": [{"categoryId": "dentist", "amount": 500, "note": "consultation"}],
+        "healthcareDetails": {
+          "qualification": "BDS (claimed)",
+          "specialty": "General dentistry",
+          "clinicName": "Demo Smile Dental Clinic",
+          "clinicAddress": "Demo Building, Hill Road, Bandra West (fictional)",
+          "consultationHoursNote": "Walk-ins accepted until 5 pm",
+          "registrationNumber": "DEMO-REG-0000",
+          "registrationCouncil": "Demo State Dental Council",
+          "isDiagnosticCentre": false,
+          "acceptsWalkIns": true
+        },
+        "homeVisits": false,
+        "availability": "available",
+        "whatsappEnabled": false,
+        "phoneDisplayConsented": true,
+        "verification": {"phone": "approved"},
+        "pinCodes": ["400050"],
+        "mapLocation": {"lat": 19.06, "lng": 72.83}
+      }
+    }
+  },
+  "error": {
+    "description": "Unknown, draft, paused or suspended id. SQL returns JSON null with HTTP 200 (not an exception); the Dart adapter converts null to NOT_FOUND or returns null (publicProfileById is Future<ProviderProfile?>).",
+    "request": {
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_public_profile",
+      "body": {"p_id": "00000000-0000-4000-8000-000000000000"}
+    },
+    "response": {
+      "status": 200,
+      "wireBody": null,
+      "normalized": {"error": {"code": "NOT_FOUND", "message": "Listing not found or not public."}}
+    }
+  }
+}

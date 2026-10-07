@@ -1,0 +1,91 @@
+plugins {
+    id "com.android.application"
+    // No "kotlin-android" here: with android.builtInKotlin=false the Flutter
+    // plugin applies Kotlin itself, and declaring it under AGP 9 makes Flutter
+    // warn that future versions will fail the build.
+    id "dev.flutter.flutter-gradle-plugin"
+}
+
+// Release signing. Never commit a keystore. Create android/key.properties from
+// key.properties.template (docs/deploy/android-release.md) before building an
+// app bundle for Play.
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file("key.properties")
+def hasReleaseSigning = keystorePropertiesFile.exists()
+if (hasReleaseSigning) {
+    keystorePropertiesFile.withReader("UTF-8") { reader ->
+        keystoreProperties.load(reader)
+    }
+}
+
+android {
+    namespace = "com.localsaathi.app"
+    // Play requires targetSdk 36 for new apps and updates from 31 Aug 2026.
+    // Pinned instead of flutter.targetSdkVersion so a Flutter upgrade cannot
+    // change runtime behaviour without review.
+    compileSdk = 36
+    ndkVersion = flutter.ndkVersion
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    defaultConfig {
+        applicationId = "com.localsaathi.app"
+        // Flutter's minimum (API 24, Android 7.0). Several plugins also declare
+        // minSdk 24, so anything lower fails the manifest merge.
+        minSdk = flutter.minSdkVersion
+        targetSdk = 36
+        // From `version: x.y.z+N` in pubspec.yaml.
+        versionCode = flutter.versionCode
+        versionName = flutter.versionName
+    }
+
+    androidResources {
+        // Keep library resource strings only for the app's languages.
+        localeFilters += ["en", "hi", "mr"]
+    }
+
+    signingConfigs {
+        if (hasReleaseSigning) {
+            release {
+                keyAlias = keystoreProperties["keyAlias"]
+                keyPassword = keystoreProperties["keyPassword"]
+                storeFile = keystoreProperties["storeFile"] ? file(keystoreProperties["storeFile"]) : null
+                storePassword = keystoreProperties["storePassword"]
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            // Falls back to debug signing when no keystore is configured, so a
+            // fresh clone can still build a release locally. Play rejects it.
+            signingConfig = hasReleaseSigning ? signingConfigs.release : signingConfigs.debug
+            minifyEnabled = true
+            shrinkResources = true
+            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
+        }
+        debug {
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+        }
+    }
+
+    packaging {
+        resources {
+            excludes += ["META-INF/DEPENDENCIES", "META-INF/LICENSE*"]
+        }
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+    }
+}
+
+flutter {
+    source = "../.."
+}

@@ -1,0 +1,132 @@
+{
+  "fixtureVersion": 1,
+  "name": "registration",
+  "synthetic": true,
+  "operation": "rpc register_profile (ProviderAuthRepository.registerProfile / ProviderRepository.createProfile), then rpc record_terms_acceptance",
+  "notes": [
+    "Caller must already hold a session whose auth.users.phone_confirmed_at is set; the phone is read from auth.users, never from the payload (0008 lines 415-420). RegistrationSubmission.phoneE164 and .session are therefore NOT sent.",
+    "Dart RegistrationSubmission has no toJson. The adapter must map: serviceAreaIds -> serviceAreaIds, photos[].caption -> photoCaptions (strings only; photo upload is separate), termsAcceptedVersion -> the follow-up record_terms_acceptance call.",
+    "register_profile creates status=draft; publishing is a separate update (trigger enforce_profile_mutation_rules).",
+    "OBSERVED GAP: verification is {} in the response. handle_auth_phone_change (0007) writes the phone verification_records row only if a profile already exists when the OTP is confirmed, which is never true for a new registrant, so new providers never get phone=approved.",
+    "Response is the owner shape: it includes moderationStatus, unlike the public shape."
+  ],
+  "success": {
+    "request": {
+      "method": "POST",
+      "path": "/rest/v1/rpc/register_profile",
+      "headers": {"apikey": "<anon-key>", "authorization": "Bearer <user-jwt>", "content-type": "application/json"},
+      "body": {
+        "p_submission": {
+          "displayName": "Demo Ramesh Electricals",
+          "baseCityId": "mh-mumbai",
+          "baseLocalityId": "mh-mumbai-powai",
+          "categoryIds": ["electrical"],
+          "serviceAreaIds": ["mh-mumbai-powai", "mh-mumbai-kurla"],
+          "description": "Wiring, fans and inverter fitting.",
+          "languages": ["hi", "en"],
+          "homeVisits": true,
+          "whatsappEnabled": true,
+          "phoneDisplayConsented": true,
+          "workingHours": {
+            "days": [
+              {"weekday": 1, "open": 570, "close": 1140},
+              {"weekday": 2, "open": 570, "close": 1140},
+              {"weekday": 3, "open": 570, "close": 1140},
+              {"weekday": 4, "open": 570, "close": 1140},
+              {"weekday": 5, "open": 570, "close": 1140},
+              {"weekday": 6, "open": 570, "close": 780},
+              {"weekday": 7, "open": null, "close": null}
+            ]
+          },
+          "photoCaptions": [],
+          "startingPrices": [{"categoryId": "electrical", "amount": 200, "note": "inspection"}],
+          "healthcareDetails": null
+        }
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "id": "0f3c1a2e-7b44-4d0a-9a51-6c2d0e5b1a04",
+        "phoneE164": "+919800450000",
+        "displayName": "Demo Ramesh Electricals",
+        "baseCityId": "mh-mumbai",
+        "baseLocalityId": "mh-mumbai-powai",
+        "status": "draft",
+        "moderationStatus": "active",
+        "createdAt": "2026-10-06T07:30:00+00:00",
+        "updatedAt": "2026-10-06T07:30:00+00:00",
+        "categoryIds": ["electrical"],
+        "serviceAreas": [
+          {"cityId": "mh-mumbai", "localityId": "mh-mumbai-powai", "pinCodes": [], "isPrimary": true},
+          {"cityId": "mh-mumbai", "localityId": "mh-mumbai-kurla", "pinCodes": [], "isPrimary": false}
+        ],
+        "description": "Wiring, fans and inverter fitting.",
+        "languages": ["hi", "en"],
+        "workingHours": {
+          "days": [
+            {"weekday": 1, "open": 570, "close": 1140},
+            {"weekday": 2, "open": 570, "close": 1140},
+            {"weekday": 3, "open": 570, "close": 1140},
+            {"weekday": 4, "open": 570, "close": 1140},
+            {"weekday": 5, "open": 570, "close": 1140},
+            {"weekday": 6, "open": 570, "close": 780},
+            {"weekday": 7, "open": null, "close": null}
+          ]
+        },
+        "photos": [],
+        "startingPrices": [{"categoryId": "electrical", "amount": 200, "note": "inspection"}],
+        "healthcareDetails": null,
+        "homeVisits": true,
+        "availability": "available",
+        "whatsappEnabled": true,
+        "phoneDisplayConsented": true,
+        "verification": {},
+        "pinCodes": [],
+        "mapLocation": null
+      }
+    },
+    "followUp": {
+      "request": {
+        "method": "POST",
+        "path": "/rest/v1/rpc/record_terms_acceptance",
+        "body": {"p_profile_id": "0f3c1a2e-7b44-4d0a-9a51-6c2d0e5b1a04", "p_version": "2026-10-04"}
+      },
+      "response": {"status": 200, "body": null}
+    }
+  },
+  "error": {
+    "description": "Registering in a city that is not yet active (Thane is coming_soon in seed.sql). SQL raises 'location_not_active: ...'; PostgREST wraps it as P0001 / HTTP 400.",
+    "request": {
+      "method": "POST",
+      "path": "/rest/v1/rpc/register_profile",
+      "body": {
+        "p_submission": {
+          "displayName": "Demo Thane Plumber",
+          "baseCityId": "mh-thane",
+          "baseLocalityId": "mh-thane-demo-locality",
+          "categoryIds": ["plumbing"],
+          "serviceAreaIds": ["mh-thane-demo-locality"],
+          "phoneDisplayConsented": true
+        }
+      }
+    },
+    "response": {
+      "status": 400,
+      "wireBody": {"code": "P0001", "details": null, "hint": null, "message": "location_not_active: mh-thane is not an active market yet"},
+      "normalized": {"httpStatus": 422, "body": {"error": {"code": "LOCATION_NOT_ACTIVE", "message": "mh-thane is not an active market yet", "field": "baseCityId"}}}
+    }
+  },
+  "otherErrors": [
+    {
+      "code": "DUPLICATE_PHONE",
+      "wireBody": {"code": "P0001", "details": null, "hint": null, "message": "conflict: this phone number already owns a profile"},
+      "normalized": {"httpStatus": 409, "body": {"error": {"code": "DUPLICATE_PHONE", "message": "This number already has a profile. Verify it to sign in."}}}
+    },
+    {
+      "code": "AUTH_REQUIRED",
+      "wireBody": {"code": "P0001", "details": null, "hint": null, "message": "not_authenticated: sign in and verify your phone before registering"},
+      "normalized": {"httpStatus": 401, "body": {"error": {"code": "AUTH_REQUIRED", "message": "Sign in and verify your phone before registering."}}}
+    }
+  ]
+}

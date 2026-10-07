@@ -1,0 +1,39 @@
+.dart_tool/
+.dart_tool/package_config.json
+.packages
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# Android build output and local machine configuration.
+android/.gradle/
+android/local.properties
+android/app/debug/
+android/app/profile/
+android/app/release/
+android/key.properties
+*.jks
+*.keystore
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.iws
+!.vscode/launch.json.template
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Coverage
+coverage/
+
+# Node
+node_modules/
+__pycache__/
+
+# Secrets
+.env
+.env.*
+!.env.example

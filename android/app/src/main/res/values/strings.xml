@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      The visible app name. Kept here rather than hardcoded in Dart so a rename
+      or a white-label build does not need a code change. Update
+      AppConfig.appName and the localised values-* files together.
+    -->
+    <string name="app_name">LocalSaathi</string>
+</resources>

@@ -1,0 +1,51 @@
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  language:
+    strict-casts: true
+    strict-inference: true
+    strict-raw-types: true
+  errors:
+    # Unused code is an error rather than a warning: in a solo project the
+    # analyzer is the reviewer.
+    unused_import: error
+    unused_local_variable: error
+    unused_element: error
+    dead_code: error
+    # Public API documentation is expected on anything reusable; missing docs
+    # stay a warning so a fast prototype commit is still possible.
+    public_member_api_docs: ignore
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+    - build/**
+    - android/**
+    - showcase/**
+    - web/**
+
+linter:
+  rules:
+    # Correctness and clarity, tuned for a one-developer codebase.
+    always_declare_return_types: true
+    avoid_print: true
+    avoid_unnecessary_containers: true
+    avoid_void_async: true
+    cancel_subscriptions: true
+    close_sinks: true
+    collection_methods_unrelated_type: true
+    prefer_const_constructors: true
+    prefer_const_constructors_in_immutables: true
+    prefer_const_declarations: true
+    prefer_final_locals: true
+    prefer_single_quotes: true
+    require_trailing_commas: true
+    sort_child_properties_last: true
+    unawaited_futures: true
+    unnecessary_lambdas: true
+    use_build_context_synchronously: true
+
+    # Deliberately NOT enabled:
+    #   public_member_api_docs — would flood the analyzer with noise in a build
+    #     this size while the API is still moving.
+    #   always_use_package_imports — relative imports inside a feature are
+    #     shorter and make the feature boundary obvious.

@@ -1,0 +1,12 @@
+# Flutter-generated local configuration. Do not commit this file.
+#
+# Create it with your own paths before the first build:
+#
+#   flutter.sdk=/absolute/path/to/flutter
+#   flutter.versionCode=1
+#   flutter.versionName=0.1.0
+#   sdk.dir=/absolute/path/to/Android/sdk
+#
+# Running `flutter pub get` or `flutter build` from the Flutter SDK's own tooling
+# usually writes this file for you. It is documented here because a fresh clone
+# that never ran Flutter tooling will fail the Gradle build without it.

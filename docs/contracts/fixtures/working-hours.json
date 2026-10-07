@@ -1,0 +1,18 @@
+{
+  "description": "Shared open-now boundary cases (phase 031). Driven by test/working_hours_contract_test.dart (Dart WorkingHours.isOpenAt) and backend/scripts/verify-db.mjs (SQL private.hours_open). Times are India wall-clock minutes since midnight; weekday 1=Monday..7=Sunday. A window with close <= open runs overnight into the next day; close 1439 means until midnight. No rows at all = hours unknown (Dart null, SQL not open-now).",
+  "cases": [
+    { "name": "overnight window does not cover the same day's early morning", "days": [{ "weekday": 2, "open": 1320, "close": 120 }], "at": { "weekday": 2, "minutes": 60 }, "open": false },
+    { "name": "overnight window open late on its own day", "days": [{ "weekday": 2, "open": 1320, "close": 120 }], "at": { "weekday": 2, "minutes": 1380 }, "open": true },
+    { "name": "overnight window spills into the next morning", "days": [{ "weekday": 2, "open": 1320, "close": 120 }], "at": { "weekday": 3, "minutes": 90 }, "open": true },
+    { "name": "spill closes at the close minute", "days": [{ "weekday": 2, "open": 1320, "close": 120 }], "at": { "weekday": 3, "minutes": 120 }, "open": false },
+    { "name": "Sunday overnight spills into Monday (week boundary)", "days": [{ "weekday": 7, "open": 1320, "close": 120 }], "at": { "weekday": 1, "minutes": 60 }, "open": true },
+    { "name": "all-day window includes 23:59", "days": [{ "weekday": 1, "open": 0, "close": 1439 }], "at": { "weekday": 1, "minutes": 1439 }, "open": true },
+    { "name": "all-day window includes 00:00", "days": [{ "weekday": 1, "open": 0, "close": 1439 }], "at": { "weekday": 1, "minutes": 0 }, "open": true },
+    { "name": "day window is closed at its close minute", "days": [{ "weekday": 1, "open": 540, "close": 1080 }], "at": { "weekday": 1, "minutes": 1080 }, "open": false },
+    { "name": "day window is closed before opening", "days": [{ "weekday": 1, "open": 540, "close": 1080 }], "at": { "weekday": 1, "minutes": 539 }, "open": false },
+    { "name": "day window open at its open minute", "days": [{ "weekday": 1, "open": 540, "close": 1080 }], "at": { "weekday": 1, "minutes": 540 }, "open": true },
+    { "name": "open == close is a 24-hour window starting at open", "days": [{ "weekday": 1, "open": 600, "close": 600 }], "at": { "weekday": 2, "minutes": 599 }, "open": true },
+    { "name": "24-hour window ends at the next day's open minute", "days": [{ "weekday": 1, "open": 600, "close": 600 }], "at": { "weekday": 2, "minutes": 600 }, "open": false },
+    { "name": "closed today, open yesterday daytime only", "days": [{ "weekday": 1, "open": 540, "close": 1080 }], "at": { "weekday": 2, "minutes": 600 }, "open": false }
+  ]
+}

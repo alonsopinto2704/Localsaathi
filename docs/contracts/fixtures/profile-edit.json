@@ -1,0 +1,104 @@
+{
+  "fixtureVersion": 1,
+  "name": "profile-edit",
+  "synthetic": true,
+  "operation": "rpc update_profile_full (ProviderRepository.updateProfile)",
+  "notes": [
+    "p_patch carries only the keys being changed. categoryIds, serviceAreas, workingHours, startingPrices and healthcareDetails are replaced wholesale if the key is present (0008 lines 728-780); scalar keys are patched individually.",
+    "Not patchable here: baseCityId/baseLocalityId, status, photos, mapLocation (use set_map_location). Dart updateProfile(profile: ProviderProfile) sends a whole profile, so the adapter must diff it into a patch and route the rest.",
+    "workingHours: null with the key present clears all seven rows, meaning 'hours not provided'.",
+    "OBSERVED GAP: phoneDisplayConsented=false is accepted while the listing is published; no consent_records row is written and the phone stays in public JSON."
+  ],
+  "success": {
+    "request": {
+      "method": "POST",
+      "path": "/rest/v1/rpc/update_profile_full",
+      "headers": {"apikey": "<anon-key>", "authorization": "Bearer <user-jwt>"},
+      "body": {
+        "p_profile_id": "0f3c1a2e-7b44-4d0a-9a51-6c2d0e5b1a04",
+        "p_patch": {
+          "description": "Wiring, fans, inverter and MCB fitting. Weekend visits by appointment.",
+          "availability": "busy",
+          "languages": ["hi", "en", "mr"],
+          "workingHours": {
+            "days": [
+              {"weekday": 1, "open": 570, "close": 1140},
+              {"weekday": 2, "open": 570, "close": 1140},
+              {"weekday": 3, "open": 570, "close": 1140},
+              {"weekday": 4, "open": 570, "close": 1140},
+              {"weekday": 5, "open": 570, "close": 1140},
+              {"weekday": 6, "open": 570, "close": 780},
+              {"weekday": 7, "open": null, "close": null}
+            ]
+          }
+        }
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "id": "0f3c1a2e-7b44-4d0a-9a51-6c2d0e5b1a04",
+        "phoneE164": "+919800450000",
+        "displayName": "Demo Ramesh Electricals",
+        "baseCityId": "mh-mumbai",
+        "baseLocalityId": "mh-mumbai-powai",
+        "status": "draft",
+        "moderationStatus": "active",
+        "createdAt": "2026-10-06T07:30:00+00:00",
+        "updatedAt": "2026-10-06T08:10:00+00:00",
+        "categoryIds": ["electrical"],
+        "serviceAreas": [
+          {"cityId": "mh-mumbai", "localityId": "mh-mumbai-powai", "pinCodes": [], "isPrimary": true},
+          {"cityId": "mh-mumbai", "localityId": "mh-mumbai-kurla", "pinCodes": [], "isPrimary": false}
+        ],
+        "description": "Wiring, fans, inverter and MCB fitting. Weekend visits by appointment.",
+        "languages": ["hi", "en", "mr"],
+        "workingHours": {
+          "days": [
+            {"weekday": 1, "open": 570, "close": 1140},
+            {"weekday": 2, "open": 570, "close": 1140},
+            {"weekday": 3, "open": 570, "close": 1140},
+            {"weekday": 4, "open": 570, "close": 1140},
+            {"weekday": 5, "open": 570, "close": 1140},
+            {"weekday": 6, "open": 570, "close": 780},
+            {"weekday": 7, "open": null, "close": null}
+          ]
+        },
+        "photos": [],
+        "startingPrices": [{"categoryId": "electrical", "amount": 200, "note": "inspection"}],
+        "healthcareDetails": null,
+        "homeVisits": true,
+        "availability": "busy",
+        "whatsappEnabled": true,
+        "phoneDisplayConsented": true,
+        "verification": {},
+        "pinCodes": [],
+        "mapLocation": null
+      }
+    }
+  },
+  "error": {
+    "description": "Editing a profile the caller does not own. SQL raises 'not_owner: ...' (0008 line 710).",
+    "request": {
+      "method": "POST",
+      "path": "/rest/v1/rpc/update_profile_full",
+      "headers": {"authorization": "Bearer <other-user-jwt>"},
+      "body": {"p_profile_id": "0f3c1a2e-7b44-4d0a-9a51-6c2d0e5b1a04", "p_patch": {"displayName": "Hijacked"}}
+    },
+    "response": {
+      "status": 400,
+      "wireBody": {"code": "P0001", "details": null, "hint": null, "message": "not_owner: cannot edit another provider's profile"},
+      "normalized": {"httpStatus": 403, "body": {"error": {"code": "NOT_OWNER", "message": "You cannot edit another provider's profile."}}}
+    }
+  },
+  "otherErrors": [
+    {
+      "code": "VALIDATION_FAILED",
+      "implementedToday": false,
+      "description": "Invalid availability value. Today the ::availability_status cast raises Postgres 22P02 (not a stable code); target maps to VALIDATION_FAILED with field=availability.",
+      "request": {"body": {"p_profile_id": "0f3c1a2e-7b44-4d0a-9a51-6c2d0e5b1a04", "p_patch": {"availability": "on_holiday"}}},
+      "wireBody": {"code": "22P02", "details": null, "hint": null, "message": "invalid input value for enum availability_status: \"on_holiday\""},
+      "normalized": {"httpStatus": 422, "body": {"error": {"code": "VALIDATION_FAILED", "message": "availability must be one of available, busy, unavailable", "field": "availability"}}}
+    }
+  ]
+}

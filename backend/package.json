@@ -1,0 +1,12 @@
+{
+  "name": "localsaathi-backend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node scripts/verify-db.mjs"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.8",
+    "@electric-sql/pglite-pgtap": "0.0.9"
+  }
+}

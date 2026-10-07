@@ -1,0 +1,4 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Flutter needs INTERNET for the debug service connection (hot reload). -->
+    <uses-permission android:name="android.permission.INTERNET" />
+</manifest>

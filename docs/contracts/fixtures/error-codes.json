@@ -1,0 +1,133 @@
+{
+  "fixtureVersion": 2,
+  "name": "error-codes",
+  "synthetic": true,
+  "description": "Stable client-facing error codes. 'wirePrefix' is what Postgres functions raise today ('<prefix>: message', docs/backend-contract.md section 11, surfaced by PostgREST as code P0001, HTTP 400). Clients and gateways map prefix to code; codes never change once released. Additive only. Since migrations 20261006000013-19 (2026-10-06): 'http' is the status a client/gateway maps the prefix to; PostgREST itself answers every RAISE with HTTP 400 / code P0001.",
+  "envelope": {
+    "error": {
+      "code": "VALIDATION_FAILED",
+      "message": "English, safe to log; the UI localizes by code and never shows this verbatim.",
+      "field": "optional dotted path, e.g. baseLocalityId",
+      "requestId": "optional correlation id (gateway only)"
+    }
+  },
+  "codes": [
+    {
+      "code": "AUTH_REQUIRED",
+      "http": 401,
+      "wirePrefix": "not_authenticated",
+      "dartEnum": "RepositoryErrorCode.notAuthenticated",
+      "implementedInSql": true,
+      "retryable": false,
+      "meaning": "No session, expired session, or phone not OTP-confirmed."
+    },
+    {
+      "code": "NOT_OWNER",
+      "http": 403,
+      "wirePrefix": "not_owner",
+      "dartEnum": "RepositoryErrorCode.notOwner",
+      "implementedInSql": true,
+      "retryable": false,
+      "meaning": "Signed in but does not own the target row, or an admin-only action was attempted (SQL reuses this prefix for admin-only failures)."
+    },
+    {
+      "code": "NOT_FOUND",
+      "http": 404,
+      "wirePrefix": "not_found",
+      "dartEnum": "RepositoryErrorCode.notFound",
+      "implementedInSql": true,
+      "retryable": false,
+      "meaning": "Target does not exist or is not publicly visible. get_public_profile returns JSON null with HTTP 200 today; the client adapter translates null to NOT_FOUND."
+    },
+    {
+      "code": "VALIDATION_FAILED",
+      "http": 422,
+      "wirePrefix": "validation_failed",
+      "dartEnum": "RepositoryErrorCode.validationFailed",
+      "implementedInSql": true,
+      "retryable": false,
+      "meaning": "Bad, missing, oversized or wrongly typed field; also unknown category/locality and search bounds (text > 80 chars, > 20 filters, offset > 500). All owner RPCs use this prefix (0012's bare 'validation:' was replaced in 0017)."
+    },
+    {
+      "code": "LISTING_NOT_PUBLISHABLE",
+      "http": 422,
+      "wirePrefix": "listing_not_publishable",
+      "dartEnum": "RepositoryErrorCode.listingNotPublishable",
+      "implementedInSql": true,
+      "retryable": false,
+      "meaning": "Publish gate failed: phone display consent missing. Other publish failures use validation_failed / location_not_active / not_authenticated / suspended."
+    },
+    {
+      "code": "CONSENT_REQUIRED",
+      "http": 422,
+      "wirePrefix": "consent_required",
+      "dartEnum": "(none - propose RepositoryErrorCode.consentRequired)",
+      "implementedInSql": true,
+      "retryable": false,
+      "meaning": "Enabling WhatsApp while phone display consent is off (record_consent / update_profile_full)."
+    },
+    {
+      "code": "LOCATION_NOT_ACTIVE",
+      "http": 422,
+      "wirePrefix": "location_not_active",
+      "dartEnum": "RepositoryErrorCode.locationNotActive",
+      "implementedInSql": true,
+      "retryable": false,
+      "meaning": "City launch_status is not active: enforced in register_profile and at publish time; inactive markets are also hidden from every discovery path."
+    },
+    {
+      "code": "CATEGORY_NOT_ALLOWED",
+      "http": 422,
+      "wirePrefix": "category_not_allowed",
+      "dartEnum": "RepositoryErrorCode.categoryNotAllowed",
+      "implementedInSql": false,
+      "retryable": false,
+      "meaning": "Not raised: unknown categories raise validation_failed; un-approved categories are accepted on a draft but cannot publish and are never shown publicly (is_publicly_listed)."
+    },
+    {
+      "code": "SUSPENDED",
+      "http": 403,
+      "wirePrefix": "suspended",
+      "dartEnum": "RepositoryErrorCode.suspended",
+      "implementedInSql": true,
+      "retryable": false,
+      "meaning": "Listing or account is suspended by moderation."
+    },
+    {
+      "code": "CONFLICT",
+      "http": 409,
+      "wirePrefix": "conflict",
+      "dartEnum": "RepositoryErrorCode.conflict",
+      "implementedInSql": true,
+      "retryable": false,
+      "meaning": "Uniqueness or state conflict: account already has a profile; stale expectedRevision ('conflict: revision_mismatch'); idempotency key reused with a different payload."
+    },
+    {
+      "code": "DUPLICATE_PHONE",
+      "http": 409,
+      "wirePrefix": "conflict: this phone number already owns a profile",
+      "dartEnum": "DuplicatePhoneNumberException",
+      "implementedInSql": true,
+      "retryable": false,
+      "meaning": "A specific CONFLICT message; Dart throws a distinct exception type. Propose a dedicated wire prefix 'duplicate_phone'."
+    },
+    {
+      "code": "RATE_LIMITED",
+      "http": 429,
+      "wirePrefix": "rate_limited",
+      "dartEnum": "(none - propose RepositoryErrorCode.rateLimited)",
+      "implementedInSql": true,
+      "retryable": true,
+      "meaning": "submit_report (5/hour, 20/day per source; 50/day per listing) and request_city (5/day per source). record_engagement never raises: over-budget events are dropped silently. Source = signed-in user id or daily-rotating hash of the edge client IP."
+    },
+    {
+      "code": "INTERNAL",
+      "http": 500,
+      "wirePrefix": "(any unmapped error, e.g. Postgres 22P02 invalid input syntax)",
+      "dartEnum": "(none - propose RepositoryErrorCode.unknown)",
+      "implementedInSql": false,
+      "retryable": true,
+      "meaning": "Unmapped Postgres or Edge error. Owner write RPCs now map type errors and unknown references to validation_failed; anything else is a bug to report."
+    }
+  ]
+}

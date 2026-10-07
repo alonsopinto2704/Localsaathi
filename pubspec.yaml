@@ -1,0 +1,81 @@
+name: localsaathi
+description: >-
+  LocalSaathi — find and contact local service providers across India. Mumbai is
+  the first active market; more cities are activated through data.
+publish_to: "none"
+
+# version+build. The account screen reads AppConfig.appVersion, which must stay
+# in step with the part before the plus sign.
+version: 0.1.0+1
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+  flutter: ">=3.24.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # Material/Widgets labels (back button, navigation bar, pickers) for hi/mr;
+  # without it those widgets throw for any non-English locale.
+  flutter_localizations:
+    sdk: flutter
+
+  # State management: one package, official, and a good fit for a solo developer
+  # who needs repository-backed controllers without a framework on top.
+  provider: ^6.1.2
+
+  # Local persistence for saved providers, the selected location, onboarding
+  # drafts and the provider session. Nothing else needs a database yet.
+  shared_preferences: ^2.3.2
+
+  # Native share sheet for "Invite a service provider" and profile sharing.
+  share_plus: ^11.0.0
+
+  # Providers add photos of their work from the gallery or camera (Android and
+  # browser). Official flutter.dev plugin.
+  image_picker: ^1.1.2
+
+  # Optional business-location map on provider profiles and search. OpenStreetMap
+  # tiles need no API key; production should point at a commercial tile host
+  # (OSM's public tiles are for light use only).
+  flutter_map: ^8.3.2
+  latlong2: ^0.10.1
+
+  # "Get directions" hands off to the device's maps app or browser.
+  url_launcher: ^6.3.3
+
+  # Backend (phone OTP, listings, photos) when built with SUPABASE_URL set.
+  supabase_flutter: ^2.18.0
+
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+
+  # Interface strings live in Dart (lib/core/l10n) rather than in ARB files,
+  # because the fallback behaviour we want — an untranslated string showing the
+  # English text instead of failing a build — is simpler to reason about with a
+  # plain class hierarchy.
+  #
+  # The only bundled assets are the brand font (Plus Jakarta Sans, from the
+  # design blueprint). Provider photos are picked on the device and, in
+  # production, uploaded to object storage; none ship in the APK.
+  assets:
+    # The font's licence, shown on the open-source licences page.
+    - assets/fonts/OFL.txt
+
+  fonts:
+    - family: PlusJakartaSans
+      fonts:
+        - asset: assets/fonts/PlusJakartaSans-Regular.ttf
+        - asset: assets/fonts/PlusJakartaSans-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/PlusJakartaSans-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/PlusJakartaSans-Bold.ttf
+          weight: 700

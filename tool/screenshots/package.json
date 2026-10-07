@@ -1,0 +1,12 @@
+{
+  "name": "localsaathi-store-screenshots",
+  "private": true,
+  "description": "Captures Play Store phone screenshots from build/web. See README.md.",
+  "type": "module",
+  "scripts": {
+    "shots": "node capture.mjs && python caption.py"
+  },
+  "dependencies": {
+    "puppeteer-core": "25.12.0"
+  }
+}

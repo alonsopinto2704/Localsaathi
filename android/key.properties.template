@@ -1,0 +1,18 @@
+# Release signing configuration. NEVER commit the real file or the keystore.
+#
+# 1. Create a keystore (keep it outside the repository):
+#      keytool -genkey -v -keystore %USERPROFILE%\keys\localsaathi-upload.jks ^
+#        -storetype JKS -keyalg RSA -keysize 2048 -validity 10000 ^
+#        -alias upload
+# 2. Copy this file to android/key.properties and fill in the values.
+# 3. Add both files to your secret manager as well as your machine: losing the
+#    upload key means you cannot ship updates under the same listing.
+#
+# Without android/key.properties the release build falls back to debug signing,
+# which is fine for local testing and rejected by Play.
+
+storePassword=REPLACE_ME
+keyPassword=REPLACE_ME
+keyAlias=upload
+# Use forward slashes or a double backslash in this path.
+storeFile=C:/Users/you/keys/localsaathi-upload.jks

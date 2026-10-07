@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Devanagari-script locales render the name unchanged; the entry exists so
+         the launcher label follows the device language once translated. -->
+    <string name="app_name">LocalSaathi</string>
+</resources>

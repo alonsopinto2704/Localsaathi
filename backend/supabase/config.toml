@@ -1,0 +1,42 @@
+# Minimal local-dev config for `supabase start`. See backend/README.md.
+project_id = "localsaathi"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public"]
+max_rows = 1000
+
+[db]
+port = 54322
+major_version = 15
+
+[studio]
+enabled = true
+port = 54323
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+additional_redirect_urls = []
+jwt_expiry = 3600
+enable_signup = true
+
+# Phone sign-in. No SMS provider is configured for local dev: the Supabase
+# CLI's local stack captures outgoing OTPs in the Inbucket-style test
+# interface / CLI logs instead of sending a real SMS, so local development
+# needs no SMS account, no cost and no production credentials -- see
+# backend/README.md "Local development without a real SMS provider".
+[auth.sms]
+enable_signup = true
+enable_confirmations = true
+
+[auth.sms.test_otp]
+# Local/dev-only fixed OTP for a fixed test number, so manual testing and
+# Flutter integration tests do not need a real phone. Numbers here NEVER work
+# against a deployed project; `supabase start` is local-only.
+"+911234500000" = "123456"
+
+[edge_runtime]
+enabled = true
