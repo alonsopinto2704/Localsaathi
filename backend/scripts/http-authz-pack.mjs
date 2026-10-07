@@ -131,6 +131,18 @@ add('anon search_providers returns only allowlisted keys, no leaks', 'status 200
   const v = checkSearchKeys(r.json);
   return [v.length === 0, v.length ? v.slice(0, 5).join('; ') : `${r.json.items.length} items clean`];
 });
+add('anon get_public_profile(OWNER) never contains the owner user id', 'no OWNER_USER_ID in body', async () => {
+  const r = await rpc('get_public_profile', { p_id: OWNER_PID });
+  return [!r.text.includes(OWNER_USER_ID), r.text.includes(OWNER_USER_ID) ? 'owner user id leaked' : `status ${r.status} clean`];
+});
+add('rotating cf-connecting-ip does not bypass per-listing report cap', 'rate_limited before 60 accepted', async () => {
+  for (let i = 0; i < 60; i++) {
+    const r = await call('POST', '/rest/v1/rpc/submit_report', {
+      body: { p_provider_id: OWNER_PID, p_reason: 'other' }, headers: { 'cf-connecting-ip': `203.0.113.${i}` } });
+    if (r.status >= 400) return [/rate_limited/.test(r.text), `stopped at ${i}: ${r.text.slice(0, 80)}`];
+  }
+  return [false, '60 reports accepted from rotated IPs'];
+});
 add('anon get_public_profile(HIDDEN) is null', 'status 200, body null', async () => {
   const r = await rpc('get_public_profile', { p_id: HIDDEN_PID });
   return [r.status === 200 && r.json === null, `status ${r.status} body ${r.text.slice(0, 80)}`];
@@ -156,8 +168,8 @@ add('anon GET credential-evidence object is not 200', '400/403/404', async () =>
   const r = await call('GET', `/storage/v1/object/credential-evidence/${OWNER_USER_ID}/probe.txt`);
   return [[400, 403, 404].includes(r.status), `status ${r.status}`];
 });
-errCheck('OTHER_JWT upload into OWNER folder of provider-photos denied', () =>
-  call('POST', `/storage/v1/object/provider-photos/${OWNER_USER_ID}/authz-probe-${Date.now()}.txt`,
+errCheck('OTHER_JWT upload into OWNER listing folder of provider-photos denied', () =>
+  call('POST', `/storage/v1/object/provider-photos/${OWNER_PID}/authz-probe-${Date.now()}.txt`,
     { jwt: OTHER_JWT, raw: 'probe', headers: { 'content-type': 'text/plain' } }));
 
 add('ADMIN_JWT rpc admin_audit_events returns array', 'status 200, JSON array', async () => {

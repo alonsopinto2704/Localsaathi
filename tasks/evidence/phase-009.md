@@ -1,6 +1,6 @@
 # Phase 009 — Launch category and locality boundaries
 
-**Status:** In review
+**Status:** Done (gate passed in phase-020; human sign-off pending)
 
 **Objective:** Define a small operational slice of Mumbai for launch; classify all categories; exclude unsupported features explicitly; provide launch matrix.
 
@@ -97,55 +97,57 @@ mh-mumbai-kanjurmarg
 
 Compact format: **Category | is_approved_for_launch | is_healthcare | Credential required | Why**
 
-| Category | Approved | Healthcare | Credential | Rationale |
-|----------|----------|-----------|-----------|-----------|
-| Plumbing | Yes | No | None (phone verify only) | High volume, low safety bar |
-| Electrician | Yes | No | **Maharashtra wireman licence** (to confirm with counsel) | Electrical safety; human review recommended |
-| Carpenter | Yes | No | None | Property-focused, customer-initiated vetting |
-| Painter | Yes | No | None | Low-stakes cosmetic service |
-| Mason | Yes | No | None | Structural but customer-managed |
-| Welding & fabrication | Yes | No | None | Customer responsibility |
-| AC repair & service | Yes | No | None | Appliance focused |
-| Appliance repair | Yes | No | None | Consumer electronics |
-| Locksmith & key maker | Yes | No | None | Low-safety service |
-| TV & electronics repair | Yes | No | None | Consumer goods |
-| Tiles & marble work | Yes | No | None | Cosmetic/finishing |
-| Waterproofing | Yes | No | None | Property-focused |
-| Interior & false ceiling | Yes | No | None | Cosmetic/finishing |
-| Home deep cleaning | Yes | No | None | Low-stakes service |
-| Pest control | Yes | No | None | High urgency, common need |
-| Laundry & ironing | Yes | No | None | Repeat transaction |
-| Sofa & carpet cleaning | Yes | No | None | Low-stakes |
-| Water tank cleaning | Yes | No | None | Utility service |
-| General helper | Yes | No | None | High volume, recurring |
-| Construction labourer | Yes | No | None | Short-term work |
-| Loading & unloading worker | Yes | No | None | Transactional |
-| Gardening | Yes | No | None | Property service |
-| Security guard | Yes | No | None | Customer-managed hiring |
-| Two-wheeler mechanic | Yes | No | None | Hobby/commute focus |
-| Car mechanic | Yes | No | None | Owner manages follow-up |
-| Puncture repair | Yes | No | None | Quick service |
-| Towing service | Yes | No | None | Emergency-adjacent but not dispatch |
-| Driver | Yes | No | None | Transactional hiring |
-| **General physician** | **Recommended: No** | **Yes** | **Medical council registration (NEET/state) — human review required** | **Directory-only rule: no booking, no medical advice, no outcome claims. Clinic staff offline appointments only.** |
-| **Dentist** | **Recommended: No** | **Yes** | **Dental council registration — human review required** | **Same directory-only rule.** |
-| **Paediatrician** | **Recommended: No** | **Yes** | **Medical council registration — human review required** | **Same directory-only rule.** |
-| **Physiotherapist** | **Recommended: No** | **Yes** | **Physiotherapy council registration — human review required** | **Same directory-only rule.** |
-| **Diagnostic centre** | **Recommended: No** | **Yes** | **Lab registration (NABL/state) — human review required** | **Same directory-only rule. No lab bookings through app.** |
-| **Home nursing & attendant** | **Recommended: No** | **Yes** | **Nursing council/senior care credential — human review. Person-safety category.** | **Same directory-only rule. Explicit person-care safety review.** |
-| **Veterinary doctor** | **Recommended: No** | **Yes** | **Veterinary council registration — human review required** | **Directory-only rule; pet owner manages follow-up.** |
-| Computer & laptop repair | Yes | No | None | Consumer electronics |
-| Network technician | Yes | No | None | Customer-managed tech |
-| Tutor | Yes | No | None | Educational; parent vetting |
-| Packers & movers | Yes | No | None | Transactional, offline quotes |
-| Internet & WiFi setup | Yes | No | None | Customer-managed tech |
-| Mobile repair | Yes | No | None | Consumer electronics |
-| Beauty services at home | Yes | No | None | Cosmetic; customer comfort = vetting |
-| Tailoring & alteration | Yes | No | None | Apparel-focused |
-| Event & catering help | Yes | No | None | Seasonal; reputation-driven |
-| Other local services | Yes | No | None | Catch-all; low volume |
+| Category | Pilot (approved) | Healthcare | Verification | Support owner / escalation | Rationale |
+|---|---|---|---|---|---|
+| Plumbing | **Yes** | No | Phone OTP | Pilot ops lead; report → review within 72 h | High volume, low safety bar |
+| Electrician | **Yes** | No | Phone OTP + licence check (confirm with counsel) | Pilot ops lead; **trust-sensitive (electrical safety)**: report → hide pending review, 24 h response | Electrical safety; human review recommended |
+| Carpenter | **Yes** | No | Phone OTP | Pilot ops lead; report → review within 72 h | Property-focused, customer-initiated vetting |
+| Painter | **Yes** | No | Phone OTP | Pilot ops lead; report → review within 72 h | Low-stakes cosmetic service |
+| Mason | Later (wave 2) | No | Phone OTP | Pilot ops lead | Structural but customer-managed |
+| Welding & fabrication | Later (wave 2) | No | Phone OTP | Pilot ops lead | Customer responsibility |
+| AC repair & service | **Yes** | No | Phone OTP | Pilot ops lead; report → review within 72 h | Appliance focused |
+| Appliance repair | **Yes** | No | Phone OTP | Pilot ops lead; report → review within 72 h | Consumer electronics |
+| Locksmith & key maker | Later (wave 2) | No | Phone OTP | Pilot ops lead; **trust-sensitive (enters/unlocks homes)**: needs a written escalation rule before enabling | Low-safety service |
+| TV & electronics repair | Later (wave 2) | No | Phone OTP | Pilot ops lead | Consumer goods |
+| Tiles & marble work | Later (wave 2) | No | Phone OTP | Pilot ops lead | Cosmetic/finishing |
+| Waterproofing | Later (wave 2) | No | Phone OTP | Pilot ops lead | Property-focused |
+| Interior & false ceiling | Later (wave 2) | No | Phone OTP | Pilot ops lead | Cosmetic/finishing |
+| Home deep cleaning | **Yes** | No | Phone OTP | Pilot ops lead; **trust-sensitive (in-home)**: report → hide pending review, 24 h response | Low-stakes service |
+| Pest control | **Yes** | No | Phone OTP | Pilot ops lead; report → review within 72 h | High urgency, common need |
+| Laundry & ironing | **Yes** | No | Phone OTP | Pilot ops lead; report → review within 72 h | Repeat transaction |
+| Sofa & carpet cleaning | Later (wave 2) | No | Phone OTP | Pilot ops lead | Low-stakes |
+| Water tank cleaning | **Yes** | No | Phone OTP | Pilot ops lead; report → review within 72 h | Utility service |
+| General helper | Later (wave 2) | No | Phone OTP | Pilot ops lead; **trust-sensitive (in-home)**: needs a written escalation rule before enabling | High volume, recurring |
+| Construction labourer | Later (wave 2) | No | Phone OTP | Pilot ops lead | Short-term work |
+| Loading & unloading worker | Later (wave 2) | No | Phone OTP | Pilot ops lead | Transactional |
+| Gardening | Later (wave 2) | No | Phone OTP | Pilot ops lead | Property service |
+| Security guard | Later (wave 2) | No | Phone OTP | Pilot ops lead; **trust-sensitive (person safety)**: needs a written escalation rule before enabling | Customer-managed hiring |
+| Two-wheeler mechanic | **Yes** | No | Phone OTP | Pilot ops lead; report → review within 72 h | Hobby/commute focus |
+| Car mechanic | Later (wave 2) | No | Phone OTP | Pilot ops lead | Owner manages follow-up |
+| Puncture repair | Later (wave 2) | No | Phone OTP | Pilot ops lead | Quick service |
+| Towing service | Later (wave 2) | No | Phone OTP | Pilot ops lead; **trust-sensitive (roadside, vulnerable customer)**: needs a written escalation rule before enabling | Emergency-adjacent but not dispatch |
+| Driver | Later (wave 2) | No | Phone OTP | Pilot ops lead; **trust-sensitive (person safety, vehicle)**: needs a written escalation rule before enabling | Transactional hiring |
+| General physician | No (hidden until credential workflow) | Yes | Medical council registration (NEET/state) — human review required | Credential reviewer (human); report → hide listing pending review | Directory-only rule: no booking, no medical advice, no outcome claims. Clinic staff offline appointments only. |
+| Dentist | No (hidden until credential workflow) | Yes | Dental council registration — human review required | Credential reviewer (human); report → hide listing pending review | Same directory-only rule. |
+| Paediatrician | No (hidden until credential workflow) | Yes | Medical council registration — human review required | Credential reviewer (human); report → hide listing pending review | Same directory-only rule. |
+| Physiotherapist | No (hidden until credential workflow) | Yes | Physiotherapy council registration — human review required | Credential reviewer (human); report → hide listing pending review | Same directory-only rule. |
+| Diagnostic centre | No (hidden until credential workflow) | Yes | Lab registration (NABL/state) — human review required | Credential reviewer (human); report → hide listing pending review | Same directory-only rule. No lab bookings through app. |
+| Home nursing & attendant | No (hidden until credential workflow) | Yes | Nursing council/senior care credential — human review. Person-safety category. | Credential reviewer (human); report → hide listing pending review | Same directory-only rule. Explicit person-care safety review. |
+| Veterinary doctor | No (hidden until credential workflow) | Yes | Veterinary council registration — human review required | Credential reviewer (human); report → hide listing pending review | Directory-only rule; pet owner manages follow-up. |
+| Computer & laptop repair | **Yes** | No | Phone OTP | Pilot ops lead; report → review within 72 h | Consumer electronics |
+| Network technician | Later (wave 2) | No | Phone OTP | Pilot ops lead | Customer-managed tech |
+| Tutor | Later (wave 2) | No | Phone OTP | Pilot ops lead; **trust-sensitive (minors)**: needs a written escalation rule before enabling | Educational; parent vetting |
+| Packers & movers | Later (wave 2) | No | Phone OTP | Pilot ops lead; **trust-sensitive (handles belongings)**: needs a written escalation rule before enabling | Transactional, offline quotes |
+| Internet & WiFi setup | Later (wave 2) | No | Phone OTP | Pilot ops lead | Customer-managed tech |
+| Mobile repair | **Yes** | No | Phone OTP | Pilot ops lead; report → review within 72 h | Consumer electronics |
+| Beauty services at home | Later (wave 2) | No | Phone OTP | Pilot ops lead; **trust-sensitive (in-home, personal contact)**: needs a written escalation rule before enabling | Cosmetic; customer comfort = vetting |
+| Tailoring & alteration | **Yes** | No | Phone OTP | Pilot ops lead; report → review within 72 h | Apparel-focused |
+| Event & catering help | Later (wave 2) | No | Phone OTP | Pilot ops lead | Seasonal; reputation-driven |
+| Other local services | Later (wave 2) | No | Phone OTP | Pilot ops lead | Catch-all; low volume |
 
-**Summary:** 28 recommended for `is_approved_for_launch=true` at Phase 1 (home repair/service, vehicles, generic labor). 7 healthcare categories recommended `is_approved_for_launch=false` pending credential review workflow (human reviewer signs off on registration scan, then flipped to true). All rows kept in database; disabled via flag, never deleted.
+**Summary (corrected 2026-10-07):** 45 categories total = **14 approved for the pilot** + 24 later (wave 2) + 7 healthcare hidden. The first draft said "28 + 7" (= 35, not 45) while its table marked 38 `Yes`; launching 38 categories in a 4-locality pilot contradicted the Idea Council (`council/verdicts.md`: ~10–15 categories) and would make Phase 010's ≥10 providers per locality/category threshold unreachable. The pilot slice is now 14: high-volume home repair/upkeep where density is plausible. All rows stay in the database; wave-2 and healthcare rows are disabled via `is_approved_for_launch=false`, never deleted.
+
+**Support ownership rule:** every enabled category has a named support owner (the pilot ops lead) and an escalation path. Trust-sensitive trades (in-home entry, person safety, minors) get "report → hide pending review, 24 h response"; wave-2 trust-sensitive trades (locksmith, security guard, home beauty, tutor, driver, towing, packers) need a written escalation rule before they are enabled.
 
 ### Explicitly excluded from launch (configuration, not deletion)
 
@@ -162,15 +164,19 @@ Compact format: **Category | is_approved_for_launch | is_healthcare | Credential
 
 1. **Healthcare launch:** Proceed with all 7 disabled + credential-review workflow, or disable only highest-risk (physician, dentist, home nursing)? Legal + operations.
 2. **Electrician credential:** Maharashtra wireman licence requirement — confirm with counsel before enforcing.
-3. **Support capacity:** Can one person cover proposed cluster? If not, recommend starting 2–3 localities only.
+3. **Pilot category pick (assumption, 2026-10-07):** the 14 pilot categories were chosen by the reviewer for volume and low trust risk; the owner should confirm or swap them after the Phase 008 incumbent test.
+4. **Support capacity:** Can one person cover proposed cluster? If not, recommend starting 2–3 localities only.
 
 ## Next integration action
 
 1. Query `public.service_categories` for real category list; confirm `is_healthcare` flag matches table above.
-2. Implement credential-review workflow for healthcare (phase 021+).
-3. Set `is_approved_for_launch=false` for healthcare categories in seed.
+2. Implement credential-review workflow for healthcare (phases 081–100, Workstream 5).
+3. Set `is_approved_for_launch=false` for healthcare and wave-2 categories in seed (only the 14 pilot categories true).
 4. Finalize proposed cluster with operations + legal.
 
 ---
 
 **Attribution:** Phase 009 evidence, LocalSaathi implementation plan.
+
+## 2026-10-07 audit follow-up
+See `tasks/evidence/audit-2026-10-07-followup.md`. The 14-category pilot is now applied in data: `category_seed.dart` + regenerated `seed.sql` (31 categories not approved) and the mock app hides listings without an approved category.

@@ -31,7 +31,7 @@ Keep an attributable record of privileged decisions that clients cannot forge or
   - a suspension without a reason is refused;
   - deletion writes an audit row.
 - `0010`: activation changes write audit rows.
-- Suite: `Tests: 14/14 files passed, 149/149 assertions passed. PASS`.
+- Suite: `Tests: 14/14 files passed, 151/151 assertions passed. PASS`.
 
 ## Residual
 Credential evidence exports and data-access exports (phase 249) must call `write_audit` when they are built.

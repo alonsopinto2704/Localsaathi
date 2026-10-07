@@ -13,7 +13,7 @@ Status key used throughout this document:
   described. Migration `0013` revoked the grants; the call now fails over
   HTTP. Each is marked **REMOVED** below with its replacement RPC.
 
-**Hardening revision (migrations `0013`-`0019`, phases 021-039).** Every
+**Hardening revision (migrations `0013`-`0022`, phases 021-040 and the 2026-10-07 audit follow-ups).** Every
 client write to provider data and every guest submission now goes through an
 owner-checked or rate-limited `SECURITY DEFINER` RPC. Tables and functions are
 closed by default (`0013`); a client can only call what is listed in this
@@ -226,7 +226,7 @@ This matches `MockProviderRepository.deleteListing` exactly (it removes the
 map entry rather than tagging it `deleted`) and means a deleted number is
 immediately free to register again, which is the documented behaviour.
 
-Deletion is `rpc('delete_listing', {p_profile_id})` (owner or admin).
+Deletion is `rpc('delete_listing', {p_profile_id})` (owner only; admins act through moderation RPCs, not owner RPCs).
 
 **Retention (migration `0019`, not a compliance claim):** the listing and its
 children (consent, verification, credentials, engagement, ...) are deleted by
@@ -306,8 +306,23 @@ fallback, the RPCs above are the contract. `phone_e164` and
 | Consent | `rpc('record_consent', {p_profile_id, p_kind, p_granted, p_wording_version})` | owner only; applies the decision and appends evidence atomically. Withdrawing `display_phone_number` or `public_profile` pauses a published listing (never silently re-listed). `whatsapp_contact` granted without phone consent is `consent_required`. Map and terms use their own RPCs. **REMOVED:** `.insert()` on `consent_records`. |
 
 Owner RPCs check `auth.uid()` inside the function (`not_owner` for another
-user's profile, `not_found` for an unknown id); admins pass the ownership
-check. Every committed profile change bumps `revision`.
+user's profile, `not_found` for an unknown id). `private.lock_owned_profile`
+is owner-only: admins get `not_owner` too and use the moderation RPCs. Each
+owner RPC call bumps `revision` exactly once (0022), and an edit that would
+leave a published listing without a launch-approved category or a service
+area is refused with `validation_failed`.
+
+**Feature flags (0022):** `rpc('get_client_flags')` returns `{key: bool}` for
+hiding UI; the server is the boundary and raises `feature_disabled:` when a
+gated action runs with its flag off (`media_intake` for `add_provider_photo`,
+`credential_intake` for credential claims, `precise_location` for a map pin,
+`provider_signup` for `register_profile`). `sponsored_placement` off makes
+`active_promotions` return `[]`; `contact_reveal` off removes `phoneE164`
+from public JSON. Admins change flags with `set_feature_flag(key, enabled,
+reason)`, which is audited.
+
+**Photo paths (0022):** upload to `provider-photos/<profile_id>/<file>` (was
+`<user_id>/`), so public URLs never expose the owner's auth id.
 
 **Guest and provider submissions (rate-limited, bounded):**
 
@@ -475,8 +490,8 @@ the client-facing codes in
 - The fixture lists HTTP 401/403/404/409/422/429, but PostgREST returns
   HTTP 400 (`P0001`) for every `raise exception`; clients must map by prefix,
   not by HTTP status. `rate_limited` is not a 429 on the wire.
-- `set_map_location` / `record_terms_acceptance` still raise a bare
-  `validation:` prefix (`0012`), which does not match `validation_failed`.
+- `set_map_location` / `record_terms_acceptance` use `validation_failed:`
+  since `0017` (the bare `validation:` prefix from `0012` is gone).
 - No `duplicate_phone:` prefix exists yet (the fixture proposes one).
 - Permission failures from revoked grants/functions are PostgREST errors
   (HTTP 401/403, Postgres `42501`), not `not_owner:`; the Dart layer should

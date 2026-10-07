@@ -1,12 +1,12 @@
 # Phase 010 — Outcome metrics and counter-metrics
 
-**Status:** In review
+**Status:** Done (gate passed in phase-020; human sign-off pending)
 
 **Objective:** Define qualified discovery, intentional contact taps, provider activation, freshness coverage, support workload with formulas, event sources, and safety counter-metrics; establish decision thresholds and minimum sample sizes.
 
 ## Changed paths
 
-- **New:** `backend/supabase/functions/event_log.ts` (proposed; logs contact taps, profile views, locality searches, reports)
+- **Event writes:** `public.record_engagement` RPC (`20261006000018_guest_writes.sql`, rate-limited); no `event_log.ts` Edge Function is needed
 - **Existing:** `lib/data/local/key_value_store.dart` has `engagementEvents` key for local buffering
 - **Existing:** `lib/core/widgets/provider_contact.dart` fires contact taps (WhatsApp, call, report)
 - **Existing:** `lib/app/controllers/provider_search_controller.dart` has profile view recording
@@ -17,7 +17,7 @@
 - `lib/core/widgets/provider_contact.dart`: "Fires the contact actions and records the corresponding in-app tap"
 - `lib/app/controllers/provider_search_controller.dart`: profile view recording
 - `lib/data/local/key_value_store.dart`: local engagement event storage
-- `backend/supabase/migrations/`: no existing events table; proposed new table
+- `backend/supabase/migrations/`: `public.engagement_events` (0006) and `public.reports` (0005) already exist; metrics use them (see "Event sources").
 
 ## Content
 
@@ -29,9 +29,9 @@
 
 | Metric | Numerator | Denominator | Window | Event source | Owner | Decision |
 |--------|-----------|-------------|--------|--------------|-------|----------|
-| **Discovery rate** | Profiles viewed (unique users, unique provider per session) | Sessions that completed a location + category selection | Weekly / monthly | `event_type='profile_view'` in events table (fired by `provider_search_controller.dart`) | Analytics | ≥50% of sessions that select a locality should reach at least one profile view. If <30%, search UX blocking discovery. |
-| **Locality coverage** | Providers with ≥1 active listing in selected locality | Total providers enabled in that locality | Weekly | Count from `providers.id` where `service_areas` ∋ locality_id and `is_published=true` | Operations | ≥10 providers per locality at launch. If locality falls to <5, disable locality temporarily (phase-009 config). |
-| **Category freshness** | Providers with "last_contact_verified" ≤ 14 days old for a category in a locality | All published providers in that category + locality | Weekly | `providers.last_availability_check` column (set by contact-tap or manual refresh, phase 081) | Operations | ≥60% of providers in each launch category should have verification ≤14 days. If <40%, initiate re-verification outreach. |
+| **Discovery rate** | Profiles viewed (unique users, unique provider per session) | Sessions that completed a location + category selection | Weekly / monthly | `engagement_events.type='profile_view'`. **Gap:** the table has no session id and no search event, so "sessions" is not computable today; needs a `search_performed` enum value + anonymous session id (owner: Workstream 6) | Analytics | ≥50% of sessions that select a locality should reach at least one profile view. If <30%, search UX blocking discovery. |
+| **Locality coverage** | Providers with ≥1 active listing in selected locality | Total providers enabled in that locality | Weekly | `provider_profiles` joined to `provider_service_areas` where `status='published'` and publicly listed | Operations | ≥10 providers per locality at launch. If locality falls to <5, disable locality temporarily (phase-009 config). |
+| **Category freshness** | Providers with `availability_confirmed_at` ≤ 14 days old for a category in a locality | All published providers in that category + locality | Weekly | Proposed column `provider_profiles.availability_confirmed_at`, set **only** by the provider confirming availability or by ops verification (never by a customer tap) | Operations | ≥60% of providers in each launch category should have verification ≤14 days. If <40%, initiate re-verification outreach. |
 
 #### 2. Intentional contact taps
 
@@ -39,9 +39,9 @@
 
 | Metric | Numerator | Denominator | Window | Event source | Owner | Decision |
 |--------|-----------|-------------|--------|--------------|-------|----------|
-| **Contact tap rate** | Taps on "Call," "WhatsApp," or "Report" buttons | Profile views (same session) | Weekly / monthly | `event_type='contact_tap'`, `action='call'|'whatsapp'|'report'` in events table (fired by `provider_contact.dart`) | Analytics | ≥8% of profile views should lead to a contact tap. If <5%, profile data or trust signals missing (phase-081 evidence weakness). |
+| **Contact tap rate** | Taps on Call or WhatsApp (`call_button_tap`, `whatsapp_button_tap`) | Profile views (same session) | Weekly / monthly | `engagement_events.type in ('call_button_tap','whatsapp_button_tap')`; reports come from `public.reports` (not an engagement event) | Analytics | ≥8% of profile views should lead to a contact tap. If <5%, profile data or trust signals missing (phase-081 evidence weakness). |
 | **Contact-to-view ratio by category** | Contact taps per unique provider viewed | Total profile-view events for that provider | Weekly | Same source; segment by category_id | Operations | Identify low-conversion categories (e.g., tutors 2% vs. plumbers 12%). May indicate category-specific trust barrier or demand weakness. |
-| **Unwanted contact complaints** | Reports filed via "Report" button with "unwanted contact" or "no response" reason | Total contact taps across all providers | Monthly | `event_type='contact_report'`, `reason='unwanted_contact'|'no_response'` | Support | ≤1 unwanted complaint per 1000 contact taps. If >2 per 1000, enable provider-side contact limits (phase 241). |
+| **Unwanted contact complaints** | `public.reports` rows with `reason in ('wrong_phone_number','spam_or_misleading')` (the enum has no "unwanted contact"/"no response" value; adding one is a schema change for Workstream 13) | Total contact taps across all providers | Monthly | `public.reports.reason` | Support | ≤1 unwanted complaint per 1000 contact taps. If >2 per 1000, enable provider-side contact limits (phase 241). |
 
 #### 3. Provider activation
 
@@ -49,7 +49,7 @@
 
 | Metric | Numerator | Denominator | Window | Event source | Owner | Decision |
 |--------|-----------|-------------|--------|--------------|-------|----------|
-| **Activation rate** | Providers who received ≥1 contact tap | Total providers with published listings in the launch localities | Monthly | Contact taps by provider_id from events table; join with providers.id | Operations | ≥30% of seeded providers should activate (receive ≥1 contact) in first month. If <15%, launch localities/categories too narrow or provider data stale. |
+| **Activation rate** | Providers who received ≥1 contact tap | Total providers with published listings in the launch localities | Monthly | `engagement_events` call/WhatsApp taps grouped by `provider_id` | Operations | ≥30% of seeded providers should activate (receive ≥1 contact) in first month. If <15%, launch localities/categories too narrow or provider data stale. |
 | **Repeat activators** | Providers who received ≥2 contact taps in same month | Activated providers | Monthly | Count taps per provider_id where tap_count ≥ 2 | Operations | ≥40% of activated providers should get repeat interest. If <20%, suggests one-off inquiries or poor provider-customer match. |
 
 #### 4. Freshness coverage
@@ -58,7 +58,7 @@
 
 | Metric | Numerator | Denominator | Window | Event source | Owner | Decision |
 |--------|-----------|-------------|--------|--------------|-------|----------|
-| **Freshness (all)** | Published providers with `last_availability_check` ≤ 14 days | All published providers in launch scope | Daily | `providers.last_availability_check` column (updated on contact tap or manual refresh in phase-081) | Operations | Target ≥70% at launch. If <50%, listings stale; trigger re-verification workflow. |
+| **Freshness (all)** | Published providers with `availability_confirmed_at` ≤ 14 days | All published providers in launch scope | Daily | `provider_profiles.availability_confirmed_at` (proposed; provider confirmation or ops verification only) | Operations | Target ≥70% at launch. If <50%, listings stale; trigger re-verification workflow. |
 | **Freshness by locality** | Same as above, per locality | Published providers in that locality | Weekly | Same source, grouped by locality_id | Support | Each locality should maintain ≥60% freshness. If a locality drops below 40%, support staff manually re-verify top 10 providers. |
 
 #### 5. Support workload
@@ -67,8 +67,8 @@
 
 | Metric | Numerator | Denominator | Window | Event source | Owner | Decision |
 |--------|-----------|-------------|--------|--------------|-------|----------|
-| **Support tickets (user)** | Tickets filed via in-app "Report" (user discovery issues, provider complaints, privacy) | Discovery sessions | Weekly | `support_tickets` table, categorized by issue_type | Support | ≤5 tickets per 1000 discovery sessions. If >10 per 1000, UX friction or provider quality issues. |
-| **Support tickets (provider)** | Tickets from providers (unwanted contact volume, dispute resolution, listing edits) | Total activated providers | Monthly | `support_tickets` table where requester_type='provider' | Support | ≤2 tickets per 100 active providers per month. If >5 per 100, contact-limiting or moderation workflow needed. |
+| **Reports (user)** | `public.reports` rows (there is no `support_tickets` table) | Discovery sessions | Weekly | `public.reports`, grouped by `reason` | Support | ≤5 tickets per 1000 discovery sessions. If >10 per 1000, UX friction or provider quality issues. |
+| **Support tickets (provider)** | Tickets from providers (unwanted contact volume, dispute resolution, listing edits) | Total activated providers | Monthly | Not captured in the schema today (no provider support channel); manual log until Workstream 13 adds one | Support | ≤2 tickets per 100 active providers per month. If >5 per 100, contact-limiting or moderation workflow needed. |
 | **Re-verification workload** | Calls/messages to providers to confirm availability | Published providers | Weekly | Manual outreach log (phase 081 tool) | Operations | Should be <5% of provider base per week. Automation via WhatsApp blast reduces cost. |
 
 ---
@@ -77,35 +77,28 @@
 
 | Counter-metric | Definition | Numerator | Denominator | Window | Event source | Owner | Threshold |
 |---|---|---|---|---|---|---|---|
-| **Reports per 1000 contacts** | Abuse/safety reports filed | Contact reports (`reason` ∋ 'unwanted', 'unprofessional', 'unsafe') | Total contact taps ÷ 1000 | Monthly | Events table, report_type filtering | Moderation | <2 per 1000 (i.e., <0.2% of contacts → issue) |
-| **Stale listing rate** | Listings older than 21 days without verification | Providers with `last_availability_check` > 21 days | Published providers | Weekly | `providers.last_availability_check` | Operations | <20% stale at launch; escalate re-verification if >30% |
+| **Reports per 1000 contacts** | Abuse/safety reports filed | `public.reports` rows (all reasons; no `unsafe` value exists yet) | Total contact taps ÷ 1000 | Monthly | `public.reports` (`reason`) ÷ `engagement_events` call/WhatsApp taps | Moderation | <2 per 1000 (i.e., <0.2% of contacts → issue) |
+| **Stale listing rate** | Listings older than 21 days without verification | Providers with `availability_confirmed_at` > 21 days | Published providers | Weekly | `provider_profiles.availability_confirmed_at` (proposed) | Operations | <20% stale at launch; escalate re-verification if >30% |
 | **Provider inactivity** | Providers who haven't received contact in 30 days | Providers with no contact taps in last 30 days | Previously activated providers | Monthly | Contact taps by provider_id | Analytics | Up to 40% is expected churn; >60% suggests category/locality mismatch or low-quality seeding |
-| **Unresolved reports** | Support tickets open >7 days | Tickets with status='open' and age >7 days | Total support tickets filed | Daily | `support_tickets` table, age calc | Support | <10% unresolved. SLA: user reports within 24h, provider resolution within 3 days. |
+| **Unresolved reports** | Reports not yet reviewed >7 days | `public.reports` with `status in ('submitted','under_review')` and `created_at` > 7 days ago | Total reports filed | Daily | `public.reports.created_at` / `reviewed_at` | Support | <10% unresolved. SLA: user reports within 24h, provider resolution within 3 days. |
 | **Cross-account exposures** | Contacts reaching wrong account or seeing private fields | Audit: test admin account access, cross-locality visibility | N/A | After each deploy | Manual security audit + automated RLS tests | Security | 0 (must be zero before launch). |
 
 ---
 
-### Event schema (proposed)
+### Event sources (existing schema — no new events table)
 
-```sql
-create table public.events (
-  id uuid primary key default gen_random_uuid(),
-  created_at timestamp default now(),
-  user_id uuid references auth.users(id),  -- null for guest
-  event_type text not null,  -- profile_view, contact_tap, search, locality_select, report, etc.
-  category_id text,
-  locality_id text,
-  provider_id text,
-  action text,  -- 'call', 'whatsapp', 'report', etc.
-  reason text,  -- for reports: 'unwanted_contact', 'no_response', 'unsafe'
-  app_version text,
-  platform text,  -- 'flutter_android', 'web'
-  timestamp_sent_millis bigint
-);
+Corrected 2026-10-07: the first draft proposed a new `public.events` table and referenced non-existent `support_tickets` and `providers.last_availability_check`. Metrics are defined against what exists:
 
--- No PII in events table; user_id is opaque.
--- RLS: users can read their own events; support reads all (with role='support').
-```
+| Source | Defined in | Use |
+|---|---|---|
+| `public.engagement_events` (`type`: `profile_view`, `call_button_tap`, `whatsapp_button_tap`, `share_tap`, `sponsor_impression`, `sponsor_tap`; plus `city_id`, `locality_id`, `category_id`) | `20260101000006_engagement_monetization.sql` | Views, contact taps, activation. No user/session id by design. |
+| `public.reports` (`reason`, `status`, `created_at`, `reviewed_at`) | `20260101000005_trust_moderation.sql` | Support workload, counter-metrics, SLA. |
+| `public.provider_profiles` (`status`, `availability`, `updated_at`) | `20260101000004_providers.sql` | Coverage, freshness. |
+
+**Schema gaps (proposals, not built):**
+1. `provider_profiles.availability_confirmed_at timestamptz` — set only by a provider "I'm still available" action or by ops verification. A customer tapping Call/WhatsApp proves nothing about whether the provider is active or answered, so taps must never refresh it. `updated_at` is not a substitute (any edit bumps it).
+2. A `search_performed` engagement type plus an anonymous, rotating session id, if the discovery-rate denominator is wanted; otherwise report discovery as absolute view counts.
+3. Report reasons for "unwanted contact" / "unsafe" if those counter-metrics are kept.
 
 ### Minimum sample sizes
 
@@ -141,7 +134,7 @@ create table public.events (
 
 ## Next integration action
 
-1. Implement event-logging RPC in `backend/supabase/functions/event_log.ts` (phase 081 dependency).
+1. Event logging exists: `public.record_engagement` (migration 0018). Remaining gap: a `search_performed` type + anonymous session id if the discovery-rate denominator is wanted.
 2. Update `lib/core/widgets/provider_contact.dart` to emit events on tap (phase 061 dependency).
 3. Wire `lib/app/controllers/provider_search_controller.dart` to log profile views (phase 101 dependency).
 4. Create Supabase table + RLS policy (phase 021 dependency).

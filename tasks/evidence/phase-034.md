@@ -32,7 +32,7 @@ Two related decisions:
   - `A_B%C` is found literally;
   - `%` does not match every provider;
   - all 13 working-hours fixture cases.
-- Suite: `Tests: 14/14 files passed, 149/149 assertions passed. PASS`.
+- Suite: `Tests: 14/14 files passed, 151/151 assertions passed. PASS`.
 
 ## Rollback
 Restore a simpler bounded query (plan). The bounds themselves stay.

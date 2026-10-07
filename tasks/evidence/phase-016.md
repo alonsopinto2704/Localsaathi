@@ -1,6 +1,6 @@
 # Phase 016 — Environment & Cost Worksheet
 
-**Status:** In review  
+**Status:** Done (gate passed in phase-020; human sign-off pending)  
 **Objective:** Define dev/staging/production environments, resource inventory, and a cost model with low/expected/stress scenarios; identify owner decisions needed for pricing confirmation.  
 **Changed paths:** None (planning document, evidence-only)  
 **Inputs reviewed:** implementation-plan (ADRs, release gates), backend/supabase/config.toml, docs/backend-contract.md, pubspec.yaml, play-store requirements, Vercel/Supabase pricing tiers (as of Oct 2026)
@@ -13,7 +13,8 @@
 
 | Resource | Specification | Owner | Data Retention | Backups | Notes |
 |---|---|---|---|---|---|
-| **Postgres** | PGlite (local, Docker) via `supabase start` | Developer | Session only | N/A | Disposable; reset via `supabase db reset` |
+| **Postgres (fast tests)** | PGlite: in-process Postgres (WASM) inside Node, **no Docker**: `node backend/scripts/verify-db.mjs` | Developer | Process lifetime | N/A | What CI and agents run today; superuser session, GoTrue/Storage only stubbed |
+| **Postgres (full stack)** | `supabase start` (Docker: real Postgres, GoTrue, PostgREST, Storage) | Developer | Docker volume | N/A | Disposable; reset via `supabase db reset`; blocked locally (Phase 006) |
 | **Auth** | Supabase Auth (local instance) | Developer | Test OTPs in config.toml | N/A | Local SIM: +911234500000 → 123456 |
 | **Storage** | Local filesystem (Docker volume) | Developer | Session only | N/A | Photos/docs discarded on reset |
 | **Secrets** | .env.local (NOT in git) | Developer | Session only | N/A | Contains SUPABASE_URL, SUPABASE_ANON_KEY (test values) |
@@ -40,13 +41,13 @@
 
 | Resource | Specification | Owner | Data Retention | Backups | Notes |
 |---|---|---|---|---|---|
-| **Supabase Project** | Production instance, ap-south-1 (Mumbai preferred) | Product Owner + Ops | Live user data | Daily incremental, weekly full backup | Pro tier ($109/month est.) or higher based on usage |
+| **Supabase Project** | Production instance, ap-south-1 (Mumbai preferred) | Product Owner + Ops | Live user data | Daily incremental, weekly full backup | Pro plan $25/month base + compute add-on (~$84 assumed; TO QUOTE) |
 | **Auth** | Supabase Auth + SMS provider (TO QUOTE: MSG91, Gupshup, Firebase, Twilio) | Product Owner | Per DPDP rules (~6 months unless longer retention justified) | Included in Supabase backup | Real SMS delivery; rate-limit enforcement |
 | **Postgres** | Live provider + customer data, with RLS enforced | Ops | Per retention policy (DPDP rules checklist: Phase 013) | Automated daily + on-demand restore drills | RPO ≤ 24h; RTO ≤ 4h (Phase 001 target) |
 | **Storage** | Supabase Storage: public-profiles (CDN) + private-credentials | Ops | User uploads: retention = profile lifetime + grace period (~30 days after deletion) | Automated; versioning enabled | Egress: assume 10GB/month at launch (Phase 016 cost model) |
 | **Edge Functions** | delete-account + AI gateway + rate-limiter | Ops | Deployment versions only (code, no execution logs) | Via version control + Vercel backup | Secrets stored in Supabase secrets manager |
 | **Website** | Vercel (or equivalent static host) + custom domain | Frontend Engineer | Prod site; non-indexed (indexingEnabled: false until launch gate) | Via GitHub + Vercel | Purge on-demand; rebuild 1x/day or manual |
-| **Android App** | Play Store listing + APK/AAB | Mobile Engineer | Build artifacts + release notes | GitHub releases + Play Console | Signing key: held by owner (Phase 007) |
+| **Android App** | Play Store listing + APK/AAB | Mobile Engineer | Build artifacts + release notes | GitHub releases + Play Console | Signing key: held by owner (Phases 281–300) |
 | **SMS Provider** | Real SMS gateway with DLT registration (India requirement) | Ops | SMS logs per provider's policy | Provider's standard | Cost: TO QUOTE per SMS (typically ₹0.50–2 per OTP + higher for marketing SMS) |
 | **AI Gateway** | LLM API (OpenAI, Anthropic, etc. — TO DECIDE Phase 161) | Ops | Request/response logs for 30 days (audit), then purge | Included in provider's backup | Cost: TO QUOTE per token/request |
 | **Monitoring & Logging** | Sentry (error tracking) + Supabase logs (PostgREST, Edge Functions) | Ops | 30-day retention (Sentry Pro, ~$29/month) | Logs auto-cleaned by retention policy | Critical for incident response |
@@ -81,11 +82,11 @@
 
 | Component | Low | Expected | Stress | Notes |
 |---|---|---|---|---|
-| **Base Tier** | $25 | $109 | $109+ | Free: $0; Pro: $109/month (1M egress free, $0.13/GB after) |
-| **Compute (extra)** | $0 | $0 | $50–100 | Added CPU/RAM if queries exceed baseline; auto-scaling |
-| **Storage Overage** | $0 | $0 | $50+ | $0.025/GB/month; 4 GB = $100/month |
-| **Egress Overage** | $0 | $0 | $4–6.50 | Pro includes 1 GB free; $0.13/GB after; 50 GB = $6.37 |
-| **Subtotal** | **$25** | **$109** | **$200+** | TO QUOTE exact pricing at execution (Oct 2026 rates may differ) |
+| **Base plan (Pro)** | $25 | $25 | $25 | Pro is $25/month per organization; includes a compute credit that covers the smallest instance. TO QUOTE at execution |
+| **Compute add-on** | $0 | $84 | $134–184 | Low: smallest instance (covered by credit). Expected: assumed larger instance (+$84, the gap the first draft folded into a "$109 base"). Stress: that plus $50–100 more. TO QUOTE |
+| **Storage Overage** | $0 | $0 | $0 | 4 GB of photos is within the plan's included storage; even billed at $0.025/GB/month, 4 GB = $0.10/month (the first draft said $100, a 1000× error) |
+| **Egress Overage** | $0 | $0 | $0–6.50 | Included egress quota TO QUOTE; worst case 50 GB × $0.13 = $6.50 |
+| **Subtotal** | **$25** | **$109** | **$159–216** | TO QUOTE exact pricing at execution (Oct 2026 rates may differ) |
 
 #### SMS Provider (OTP Delivery)
 
@@ -102,10 +103,10 @@
 
 | Provider | Cost Model | Low | Expected | Stress | Notes |
 |---|---|---|---|---|
-| OpenAI (gpt-4-turbo) | $0.01–0.03 per 1K in/out tokens | $0 | $6–12 | $60–120 | 200K tokens/month = 100K calls × 2K tokens; regional pricing varies |
-| Anthropic (Claude 3 Haiku) | $0.25 per 1M input, $1.25 per 1M output tokens | $0 | $0.50–2 | $5–10 | Cheapest option; low latency; used in Phase 015 examples |
-| Anthropic (Claude 3 Sonnet) | $3 per 1M input, $15 per 1M output | $0 | $6–15 | $60–150 | Mid-range quality; trade-off between Haiku and Opus |
-| **Estimated for LocalSaathi** | Assume Haiku for launch (cheapest) | $0 | $1–3 | $10–20 | **TO QUOTE at execution** — owner decision Phase 161; scale up to Sonnet if quality insufficient |
+| OpenAI (gpt-4-turbo) | $0.01–0.03 per 1K in/out tokens | $0 | $2–6 | $20–60 | Expected 200K tokens/month = 100 calls × 2K tokens (200 × $0.01–0.03); stress 2M tokens. The first draft said "100K calls" (= 200M tokens) |
+| Anthropic (Claude 3 Haiku) | $0.25 per 1M input, $1.25 per 1M output tokens | $0 | $0.05–0.25 | $0.50–2.50 | Cheapest option; low latency; used in Phase 015 examples |
+| Anthropic (Claude 3 Sonnet) | $3 per 1M input, $15 per 1M output | $0 | $0.60–3 | $6–30 | Mid-range quality; trade-off between Haiku and Opus |
+| **Estimated for LocalSaathi** | Assume the cheapest capable model for launch | $0 | <$1 | ~$3 | **TO QUOTE at execution** — owner decision Phase 161; scale up to Sonnet if quality insufficient |
 
 #### Website Hosting & CDN
 
@@ -154,14 +155,14 @@
 
 | Scenario | Supabase | SMS | AI | Website | Domain | Monitoring | Misc. | **Total/Month** | **Annual** |
 |---|---|---|---|---|---|---|---|---|---|
-| **Low (100 providers, 500 users/month)** | $25 | $6 | $0 | $0 | $2 | $0 | $0 | **$33** | **$400** |
-| **Expected (500 providers, 2K users/month)** | $109 | $40 | $2 | $20 | $2 | $29 | $0 | **$202** | **$2,424** |
-| **Stress (2K providers, 10K users/month)** | $200 | $120 | $15 | $20 | $2 | $29 | $0 | **$386** | **$4,632** |
+| **Low (100 providers, 500 users/month)** | $25 | $6 | $0 | $0 | $2 | $0 | $0 | **$33** | **$396** |
+| **Expected (500 providers, 2K users/month)** | $109 ($25 base + $84 compute) | $40 | $0.25 | $20 | $2 | $29 | $0 | **$200.25** | **$2,403** |
+| **Stress (2K providers, 10K users/month)** | $165.50 ($25 base + $134 compute + $6.50 egress) | $120 | $2.50 | $20 | $2 | $29 | $0 | **$339** | **$4,068** |
 
 **Notes on "Stress" scenario:**
 - Supabase overages assume 4 GB storage + 50 GB egress (Phase 016 assumptions).
 - SMS assumes ₹5000–15000/month (₹0.50–2/OTP average) via MSG91 or Gupshup.
-- AI assumes Claude 3 Haiku at 1000 requests/month (2K tokens average) = ~2M tokens = ~$12–15.
+- AI assumes Claude 3 Haiku at 1000 requests/month (2K tokens average) = ~2M tokens = ~$2.50 at the output rate.
 - Website assumes Vercel Pro; egress within free tier.
 - Monitoring assumes Sentry Pro (incident response, production essential).
 - One-time costs (Google Play $25, domain setup, legal review, security audit) are NOT included in monthly totals.
@@ -209,20 +210,23 @@ Low,Website (Vercel),month,1,0,0,Hobby tier (free); 100 GB bandwidth free
 Low,Domain (avg),month,1,2,2,₹500-2000/year amortized (~$2/month)
 Low,Monitoring (Sentry free),month,1,0,0,Free tier; 5K events/month
 Low,TOTAL_LOW,,,,,33
-Expected,Supabase Pro,month,1,109,109,Base tier + compute (if needed)
+Expected,Supabase Pro base,month,1,25,25,Base plan
+Expected,Supabase compute add-on,month,1,84,84,Assumed larger instance; TO QUOTE
 Expected,SMS (MSG91),OTPs,2000,0.020,40,Assume $0.020 per OTP (₹1.67 avg)
-Expected,AI (Haiku),1M tokens,0.2,1.25,2,200K tokens/month; $0.25 per 1M input + $1.25 per 1M output
+Expected,AI (Haiku),1M tokens,0.2,1.25,0.25,200K tokens/month priced at the $1.25/1M output rate (upper bound)
 Expected,Website (Vercel Pro),month,1,20,20,Pro tier; unlimited egress from Vercel edge
 Expected,Domain (avg),month,1,2,2,Registrar renewal
 Expected,Monitoring (Sentry Pro),month,1,29,29,Incident response; recommended for production
-Expected,TOTAL_EXPECTED,,,,,202
-Stress,Supabase Pro + Overages,month,1,200,200,"Base $109 + compute $50 + storage overage $50; 4 GB storage, 50 GB egress"
+Expected,TOTAL_EXPECTED,,,,,200.25
+Stress,Supabase Pro base,month,1,25,25,Base plan
+Stress,Supabase compute add-on,month,1,134,134,"$84 instance + $50 extra; TO QUOTE"
+Stress,Supabase egress,GB,50,0.13,6.50,"Worst case if 50 GB exceeds the included quota; 4 GB storage is within quota ($0)"
 Stress,SMS (MSG91),OTPs,10000,0.012,120,"Assume $0.012 per OTP; ₹0.50-2 typical; stress = higher volume"
-Stress,AI (Haiku),1M tokens,2,1.25,15,"2M tokens/month; 1000 requests × 2K tokens; Haiku ~$0.125 per request"
+Stress,AI (Haiku),1M tokens,2,1.25,2.50,"2M tokens/month = 1000 requests × 2K tokens; ~$0.0025 per request at the output rate"
 Stress,Website (Vercel Pro),month,1,20,20,Pro tier; egress free
 Stress,Domain (avg),month,1,2,2,Registrar renewal
 Stress,Monitoring (Sentry Pro),month,1,29,29,Production essential
-Stress,TOTAL_STRESS,,,,,386
+Stress,TOTAL_STRESS,,,,,339.00
 ```
 
 ---
@@ -237,7 +241,7 @@ Stress,TOTAL_STRESS,,,,,386
 
 4. **Sentry Pro vs. Free (Phase 281):** Is production error tracking ($29/month) justified, or use free tier? Affects incident response SLA. → **Recommended for production; revert to free tier only if monthly spend ceiling exceeded.**
 
-5. **Website Analytics (Phase 005):** Vercel Analytics (free, in Vercel Pro), Plausible ($9–20/month, privacy-friendly), or none? → **Assumed Vercel free tier; no additional cost in model.**
+5. **Website Analytics (Phases 141–160):** Vercel Analytics (free, in Vercel Pro), Plausible ($9–20/month, privacy-friendly), or none? → **Assumed Vercel free tier; no additional cost in model.**
 
 6. **Security Audit Scope (Phase 012):** Full penetration test ($5K+), or risk-based audit focusing on RLS + Edge Functions ($2K)? → **Recommended; approve once Phase 012 threat model is finalized.**
 

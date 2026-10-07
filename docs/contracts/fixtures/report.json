@@ -1,52 +1,91 @@
 {
-  "fixtureVersion": 1,
+  "fixtureVersion": 2,
   "name": "report",
   "synthetic": true,
-  "operation": "insert reports (ReportRepository.submit) - guests allowed",
+  "operation": "rpc submit_report (ReportRepository.submit) - guests allowed",
   "notes": [
-    "Wire enum values are snake_case (wrong_phone_number); Dart ReportReason.name is camelCase (wrongPhoneNumber). The adapter must convert both ways.",
-    "Today anon may INSERT but not SELECT reports (0009 lines 193-194), so PostgREST 'Prefer: return=representation' fails with an RLS error. Use return=minimal and generate the id client-side, or add a submit_report RPC that returns {id, status, createdAt}. Dart submit() returns Future<Report>.",
-    "Today the client can also send status, reviewed_at, resolution_note and reporter_phone_e164 (no column restriction, no CHECK); the target contract accepts only provider_id, reason, details and optional contact."
+    "Re-baselined 2026-10-07 to migrations through 20261006000021 (v2). v1 described 0001-0012.",
+    "Wire enum values are snake_case (wrong_phone_number); Dart ReportReason.name is camelCase (wrongPhoneNumber). The adapter must convert both ways (phase-014 #1).",
+    "Direct INSERT on reports is revoked (20261006000013) and the anon insert policy dropped (20261006000018:196); the only path is submit_report, which sets status/source server-side, caps details at 1000 chars, normalizes the optional reporter phone and rate-limits per source and per listing.",
+    "submit_report returns a receipt {receiptId, status}, not a Report row; a repeat report from the same source within 24 h returns the same receipt. Dart submit() returns Future<Report>, so the adapter builds the Report locally from the receipt."
   ],
   "success": {
     "request": {
       "method": "POST",
-      "path": "/rest/v1/reports",
-      "headers": {"apikey": "<anon-key>", "content-type": "application/json", "prefer": "return=minimal"},
+      "path": "/rest/v1/rpc/submit_report",
+      "headers": {
+        "apikey": "<anon-key>",
+        "content-type": "application/json"
+      },
       "body": {
-        "id": "7c9e6a10-0000-4000-8000-0000000000a1",
-        "provider_id": "0f3c1a2e-7b44-4d0a-9a51-6c2d0e5b1a01",
-        "reason": "wrong_phone_number",
-        "details": "Number rings but the person says this is not a plumber (demo report).",
-        "reporter_phone_e164": null
+        "p_provider_id": "0f3c1a2e-7b44-4d0a-9a51-6c2d0e5b1a01",
+        "p_reason": "wrong_phone_number",
+        "p_details": "Number rings but the person says this is not a plumber (demo report)."
       }
     },
-    "response": {"status": 201, "body": null},
-    "proposedRpcResponse": {
-      "request": {"path": "/rest/v1/rpc/submit_report", "body": {"p_provider_id": "0f3c1a2e-7b44-4d0a-9a51-6c2d0e5b1a01", "p_reason": "wrong_phone_number", "p_details": "Number rings but the person says this is not a plumber (demo report)."}},
+    "response": {
       "status": 200,
-      "body": {"id": "7c9e6a10-0000-4000-8000-0000000000a1", "providerId": "0f3c1a2e-7b44-4d0a-9a51-6c2d0e5b1a01", "reason": "wrong_phone_number", "status": "submitted", "createdAt": "2026-10-06T09:05:00+00:00"}
+      "body": {
+        "receiptId": "7c9e6a10-0000-4000-8000-0000000000a1",
+        "status": "submitted"
+      }
     }
   },
   "error": {
-    "description": "Report against an id that does not exist. Today this is a raw FK violation (Postgres 23503, HTTP 409) and, because the FK check runs without RLS, it also lets any anon caller probe which provider UUIDs exist (including unpublished ones).",
+    "description": "Report against an id that does not exist or is not publicly listed. submit_report raises 'not_found: listing not found' (20261006000018:80-81), so unknown and hidden listings are indistinguishable (no FK probe).",
     "request": {
       "method": "POST",
-      "path": "/rest/v1/reports",
-      "headers": {"prefer": "return=minimal"},
-      "body": {"provider_id": "00000000-0000-4000-8000-000000000000", "reason": "other", "details": "test"}
+      "path": "/rest/v1/rpc/submit_report",
+      "headers": {
+        "apikey": "<anon-key>"
+      },
+      "body": {
+        "p_provider_id": "00000000-0000-4000-8000-000000000000",
+        "p_reason": "other"
+      }
     },
     "response": {
-      "status": 409,
-      "wireBody": {"code": "23503", "details": "Key (provider_id)=(00000000-0000-4000-8000-000000000000) is not present in table \"provider_profiles\".", "hint": null, "message": "insert or update on table \"reports\" violates foreign key constraint \"reports_provider_id_fkey\""},
-      "normalized": {"httpStatus": 404, "body": {"error": {"code": "NOT_FOUND", "message": "Listing not found."}}}
+      "status": 400,
+      "wireBody": {
+        "code": "P0001",
+        "details": null,
+        "hint": null,
+        "message": "not_found: listing not found"
+      },
+      "normalized": {
+        "httpStatus": 404,
+        "body": {
+          "error": {
+            "code": "NOT_FOUND",
+            "message": "Listing not found."
+          }
+        }
+      }
     }
   },
   "otherErrors": [
     {
       "code": "RATE_LIMITED",
-      "implementedToday": false,
-      "normalized": {"httpStatus": 429, "headers": {"retry-after": "3600"}, "body": {"error": {"code": "RATE_LIMITED", "message": "Too many reports from this device; try again later."}}}
+      "implementedToday": true,
+      "normalized": {
+        "httpStatus": 429,
+        "headers": {
+          "retry-after": "3600"
+        },
+        "body": {
+          "error": {
+            "code": "RATE_LIMITED",
+            "message": "Too many reports from this device; try again later."
+          }
+        }
+      },
+      "wireBody": {
+        "code": "P0001",
+        "details": null,
+        "hint": null,
+        "message": "rate_limited: too many reports, try again later"
+      },
+      "description": "submit_report raises 'rate_limited: ...' after 5 reports/hour or 20/day from one source, or 50/day against one listing (20261006000018:101-108)."
     }
   ]
 }

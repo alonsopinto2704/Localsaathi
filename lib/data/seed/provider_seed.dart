@@ -51,7 +51,9 @@ class ProviderSeed {
     final int b = (index * 91 + 7) % 1000;
     final String block = a.toString().padLeft(3, '0');
     final String tail = b.toString().padLeft(3, '0');
-    return '+91999$block$tail';
+    // 10-digit national number (9990xxxyyy): a valid mobile shape, from a
+    // block no operator assigns in practice; still never dialled (demo).
+    return '+919990$block$tail';
   }
 
   /// Deterministic id generator, shared with the repository when a badge is

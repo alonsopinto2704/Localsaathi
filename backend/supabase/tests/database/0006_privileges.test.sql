@@ -17,7 +17,7 @@ select set_eq(
        and has_function_privilege('anon', p.oid, 'EXECUTE') $$,
   $$ values ('search_providers'), ('get_public_profile'), ('similar_providers'),
             ('provider_count_by_locality'), ('providers_published_in_city'),
-            ('active_promotions'), ('search_cities'), ('search_categories'),
+            ('active_promotions'), ('flag_enabled'), ('get_client_flags'), ('search_cities'), ('search_categories'),
             ('submit_report'), ('record_engagement'), ('request_city'), ('is_admin') $$,
   'anon can execute exactly the discovery allowlist, guest writes and is_admin'
 );

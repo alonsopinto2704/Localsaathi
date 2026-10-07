@@ -39,6 +39,7 @@ class ProviderAccount {
   bool get hasProfile => profileId != null;
 
   ProviderAccount copyWith({
+    String? phoneE164,
     String? profileId,
     DateTime? phoneVerifiedAt,
     DateTime? lastSignedInAt,
@@ -47,7 +48,7 @@ class ProviderAccount {
   }) =>
       ProviderAccount(
         id: id,
-        phoneE164: phoneE164,
+        phoneE164: phoneE164 ?? this.phoneE164,
         createdAt: createdAt,
         profileId: profileId ?? this.profileId,
         phoneVerifiedAt: phoneVerifiedAt ?? this.phoneVerifiedAt,

@@ -50,7 +50,7 @@ Notes on the columns:
    - There is still exactly one definition of "publicly listed". The code review had flagged an inline duplicate as drift risk, and this resolves it.
 
 ## Semantics check
-- No relevance change from the indexes or the view. The suite (`node backend/scripts/verify-db.mjs` → `Tests: 14/14 files passed, 149/149 assertions passed. PASS`) includes:
+- No relevance change from the indexes or the view. The suite (`node backend/scripts/verify-db.mjs` → `Tests: 14/14 files passed, 151/151 assertions passed. PASS`) includes:
   - ordering (sponsored first, deterministic `id` tie-break);
   - eligibility on every discovery path (0010 and 0014);
   - bounds (0012).

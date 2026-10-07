@@ -60,8 +60,8 @@ select is(
   1, 'the report survives with provider_id null and a snapshot carrying displayName');
 select is(
   (select count(*)::int from private.storage_cleanup_queue
-   where prefix = (select value from fx where key = 'owner') || '/' and processed_at is null),
-  2, 'two storage_cleanup_queue rows are queued (photos, credential evidence)');
+   where prefix = (select value from fx where key = 'a') || '/' and bucket_id = 'provider-photos' and processed_at is null),
+  1, 'the listing''s own photo folder is queued for cleanup (never the user''s whole folder)');
 select ok(
   exists (select 1 from private.audit_events
           where action = 'listing_deleted' and target_id = (select value from fx where key = 'a')

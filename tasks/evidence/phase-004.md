@@ -1,6 +1,6 @@
 # Phase 004 Evidence - Database test runner repair
 
-**Status:** In review
+**Status:** Done (gate passed in phase-020; human sign-off pending)
 **Objective:** Make `node backend/scripts/verify-db.mjs` run every intended pgTAP suite to its full plan; any error, missing/short plan or failed assertion exits nonzero. No production rule weakened.
 
 ## Prerequisites checked
@@ -57,10 +57,17 @@ None in production code. Suites now exercise the admin-only moderation gate legi
 ## Residual risks
 - PGlite session user is a superuser (noted in `scripts/supabase-stub.sql`); security-definer/owner differences are only checkable on a real stack (Phase 006).
 - `not ok ... # TODO` is tolerated by the runner (standard TAP); none exist today.
+- ~~Runner did not check test-number order or `Bail out!`~~ fixed 2026-10-07 (see below).
 - Only 17 assertions; storage-bucket policies and owner-update success are not covered by any suite (see Phase 006).
 
 ## Rollback
-Restore previous runner/tests from the tarball backup; no data or migration effects.
+Restore previous runner/tests from git (baseline commit `8838c54`; before 2026-10-07 the only backup was a temp tarball); no data or migration effects.
 
 ## Next integration action
 Reviewer confirms; run `npm --prefix backend test` in CI. Consider a `0006` suite for storage policies and an owner-update success case.
+
+## Later changes to Phase 004 files (cross-reference, 2026-10-07)
+- **Phase 021:** `verify-db.mjs` now boots PGlite through the shared `backend/scripts/db.mjs`; suites `0006`–`0013` added (phase-021.md).
+- **Phase 023:** `verify-db.mjs` re-grants pgTAP's `extensions` functions and the `tests` schema to the API roles after migration `20261006000013_privilege_hardening.sql` revoked blanket `EXECUTE` (test-only; phase-023.md).
+- **Phases 021–036:** `0000_helpers.sql` gained `tests.create_admin(p_phone)` and other fixtures; still setup-only, not a TAP suite.
+- **Phase 004 follow-up (2026-10-07):** the TAP parser now also fails a file when test numbers are not `1..N` in order, or on any `Bail out!` line. Re-run: `node backend/scripts/verify-db.mjs` → `Tests: 14/14 files passed, 151/151 assertions passed. PASS`.

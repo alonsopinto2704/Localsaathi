@@ -63,7 +63,7 @@ class MockSavedProviderRepository implements SavedProviderRepository {
       final ProviderProfile? profile = _store.profilesById[id];
       // A saved provider that has since been paused or deleted is silently
       // dropped rather than shown as a dead entry.
-      if (profile != null && profile.isPubliclyVisible) profiles.add(profile);
+      if (profile != null && _store.isListed(profile)) profiles.add(profile);
     }
     profiles.sort(
       (ProviderProfile a, ProviderProfile b) =>

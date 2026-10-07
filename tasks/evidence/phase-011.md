@@ -1,6 +1,6 @@
 # Phase 011 Evidence — Architecture and data-flow diagram
 
-**Status:** In review  
+**Status:** Done (gate passed in phase-020; human sign-off pending)  
 **Objective:** Map system architecture (Flutter app, Supabase backend, planned website, AI gateway, admin tool), data flows, trust boundaries, credential storage, and account deletion cascade.
 
 ---
@@ -95,11 +95,11 @@ graph TB
 | **categoryIds** | ✓ | ✓ | ✓ | ✓ | Same |
 | **photos** | ✓ | ✓ | ✓ | ✓ | Same |
 | **phoneE164** | ✓ (if consent) | ✓ (if consent) | ✓ | ✓ | Same |
-| **status** | Filtered to 'published' | Hidden | ✓ | ✓ | Never returned in public results |
-| **moderation_status** | **✗ Hidden** | **✗ Hidden** | **✗ Hidden** | ✓ | Not in any public function response (see `provider_profile_json()`) |
-| **suspension_reason** | **✗ Hidden** | **✗ Hidden** | **✗ Hidden** | ✓ | Admin-only field |
+| **status** | ✓ (always `"published"`; results are filtered to it) | ✓ (`get_public_profile` returns `"status": "published"`) | ✓ | ✓ | Returned by `public_profile_json` (0016); only published rows reach the public |
+| **moderation_status** | **✗ Hidden** | **✗ Hidden** | ✓ (`my_profile` → `provider_profile_json_core` emits `moderationStatus`) | ✓ | Stripped from public projections (`public_profile_json`, 0016) |
+| **suspension_reason** | **✗ Hidden** | **✗ Hidden** | ✓ (`my_account` returns `suspensionReason`, `isSuspended`) | ✓ | Owner sees why they were suspended; never public |
 | **mapLocation** | ✓ (if opted in) | ✓ (if opted in) | ✓ | ✓ | Consent-gated |
-| **credentialPath** (evidence) | **✗ Never** | **✗ Never** | ✗ | ✓ | Separate table with no public RLS |
+| **credentialPath** (evidence) | **✗ Never** | **✗ Never** | ✓ own rows (`0009_rls.sql` "owner reads own credentials") | ✓ | `credential_records`: owner select/insert/delete own rows, no public policy; the file itself is in a private bucket |
 | **workingHours** | ✓ | ✓ | ✓ | ✓ | Public if profile is public |
 | **whatsappEnabled** | ✓ | ✓ | ✓ | ✓ | Public if profile is public |
 
@@ -357,7 +357,7 @@ DETERMINISM CHECK:
     ├─ ⚠ PLANNED: Website (Astro static) has no invalidation mechanism
     ├─ If provider pages were pre-rendered to HTML, they remain cached
     ├─ CDN cache (if any) is not invalidated
-    └─ Mitigation: Disable indexing until live invalidation (planned Phase 005)
+    └─ Mitigation: Disable indexing until live invalidation (planned Phases 141–160, website)
 
 21. LOCAL DEVICE: BOOKMARKS & DRAFTS
     ├─ SavedProviderRepository: User may have bookmarked this provider
@@ -440,21 +440,21 @@ DELETION SUMMARY BY STORE:
 
 | Component | Current | Planned Path | Blocker |
 |---|---|---|---|
-| **Website (Astro)** | Missing | Phase 005 (WS5 in plan.md) | None; can build now |
-| **SMS OTP Gateway** | Migrations accept it, not integrated | Phase 021 | Decision: MSG91 DLT vs Twilio Verify |
+| **Website (Astro)** | Missing | Phases 141–160 (Workstream 8) | None; can build now |
+| **SMS OTP Gateway** | Migrations accept it, not integrated | Phases 041–060 | Decision: MSG91 DLT vs Twilio Verify |
 | **AI Gateway + Retrieval** | Documented (docs/claude-handoff.md), not implemented | Phase 161+ | Needs platform design |
 | **Admin Tool (Lovable)** | Mentioned, not started | Phase 241+ | Needs requirements/design |
-| **Contact wiring (tel: / wa.me:)** | Shows "not wired" modal | Phase 021 | Supabase auth layer must be live |
+| **Contact wiring (tel: / wa.me:)** | Shows "not wired" modal | Phases 061–080 | Supabase auth layer must be live |
 | **Photo storage lifecycle** | Schema designed, not exercised | Phase 081 | Needs upload/moderation flow |
-| **CI/CD workflows** | Missing | Phase 003 | None; can build now |
-| **Account deletion cleanup** | Cascade works; orphaned files remain | Phase 022+ | Needs async job for storage files |
+| **CI/CD workflows** | Missing | Phases 263–267 | None; can build now |
+| **Account deletion cleanup** | Cascade works; orphaned files remain | Phase 035 + Workstream 14 | Needs async job for storage files |
 
 ---
 
 ## Existing vs Planned: Honest Labeling
 
 ### What Exists & Works
-- ✓ Flutter app with all 13 feature screens
+- ✓ Flutter app with 12 feature packages (24 files)
 - ✓ Repository interfaces and full mock implementations
 - ✓ 12 migrations (complete schema, not executed)
 - ✓ 1 Edge Function (delete-account, not tested)
@@ -465,16 +465,16 @@ DELETION SUMMARY BY STORE:
 
 ### What Is Planned (Not Implemented)
 
-#### Phase 021 (Backend integration)
+#### Phases 041–080 (Auth + live Flutter repositories)
 - Supabase data layer repositories
 - Real phone OTP via SMS provider
 - Live call/WhatsApp action
 - Web browser compatibility testing
 
-#### Phase 003–005
-- CI/CD workflows
-- Astro website
-- Deployment runbooks
+#### Phases 141–160, 263–267, 281–300
+- Astro website (141–160)
+- CI/CD workflows (263–267)
+- Deployment runbooks (281–300)
 
 #### Phase 081+
 - Photo upload, moderation, lifecycle
@@ -491,6 +491,12 @@ DELETION SUMMARY BY STORE:
 - Moderation dashboard
 
 ---
+
+## Post-Workstream-2 changes to the flows above (2026-10-07)
+The sequence traces above describe migrations 0001–0012. Since then:
+- **Guest search:** `search_providers` (0016) gates rows with `is_publicly_listed` (published, active moderation, active city, ≥1 launch-approved category) and serialises through the allowlisted `public_profile_json`; it no longer orders by `phone_display_consented` or strips fields in Dart. `phoneE164` is null without consent or with the `contact_reveal` flag off (0022).
+- **Account deletion:** `delete-account` removes Storage objects first (listing photo folder `<profile_id>/`, legacy `<user_id>/`, credential evidence `<user_id>/`), then deletes the auth user; reports survive with `provider_id` null and a `provider_snapshot` for 180 days (0019); exact deleted object paths are queued for cleanup (0022).
+- **Photos:** public objects live under the listing's profile id, so no public URL or JSON reveals the owner's auth user id (0022).
 
 ## Residual Uncertainty
 
@@ -515,31 +521,31 @@ DELETION SUMMARY BY STORE:
 
 ## Next Integration Action
 
-1. **Phase 021 (Backend Integration Engineer):**
-   - Execute migrations: `supabase start` → `supabase test db` (fix any syntax/fixture issues)
-   - Implement Supabase-backed repositories
-   - Wire real phone OTP + SMS provider
+1. **Phase 006 + Phases 041–080 (Backend Integration Engineer):**
+   - Execute migrations on a real stack: `supabase start` → `supabase test db` (Phase 006, blocked on Docker)
+   - Wire real phone OTP + SMS provider (Phases 041–060)
+   - Implement Supabase-backed repositories (Phases 061–080)
    - Test account deletion flow end-to-end
    - Address storage orphan cleanup
 
-2. **Phase 022 (Backend/Reliability Engineer):**
+2. **Phase 035 + Workstream 14 (Backend/Reliability Engineer):**
    - Implement async cleanup job for orphaned storage files (provider-photos, credential-evidence)
    - Set explicit backup retention policy
    - Document restore procedure and its effect on deleted accounts
 
-3. **Phase 005 (Web Engineer):**
+3. **Phases 141–160 (Web Engineer):**
    - Build Astro website from seed data
    - Implement robots.txt (indexing off) until cache invalidation is designed
    - Add website to data-flow diagram
 
-4. **Phase 241 (Admin/Operations):**
+4. **Phases 241+ (Admin/Operations):**
    - Design admin tool in Lovable
    - Implement credential review workflow
    - Implement moderation + account suspension flows
 
 ---
 
-**Architecture and data flow documented. All flows traced end-to-end. Ready for Phase 021 implementation and backend testing.**
+**Architecture and data flow documented. All flows traced end-to-end. Workstream 2 (Phases 021–040) has since landed in PGlite; live integration is Phases 041–080.**
 
 
 ## Chief-engineer review (2026-10-06)

@@ -21,7 +21,7 @@ Add a revision precondition to owner edits, so two devices cannot silently overw
 - `0009`:
   - a stale revision returns `conflict`;
   - the current revision succeeds and increments the counter.
-- Suite: `Tests: 14/14 files passed, 149/149 assertions passed. PASS`.
+- Suite: `Tests: 14/14 files passed, 151/151 assertions passed. PASS`.
 
 ## Follow-up
 The Flutter adapters (phase 061+) must send `expectedRevision` from the owner JSON and handle the conflict in the edit UI.

@@ -1,6 +1,6 @@
 # Phase 002 Evidence — Customer Journey Baseline
 
-**Status:** In review  
+**Status:** Done (gate passed in phase-020; human sign-off pending)  
 **Objective:** Trace customer journey (locality selection → search → comparison → bookmarks → reporting → contact) and identify broken/mocked actions.  
 **Method:** Static code trace of controllers, repositories, l10n, and mock implementations; no device run.
 
@@ -12,7 +12,7 @@
 | **Search Query** | `search_results_screen.dart` | `ProviderSearchController.search()` + `ProviderRepository.search()` | Mock returns `ProviderSearchResults` (sponsored + organic) with sample data | None — mock data only | Query → live results via Supabase | `ProviderRepository` |
 | **Comparison** | Provider card in results | Card display logic in `provider_card.dart` | Mock UI displays all fields; working-hours chip, badges, rating | None — rendering works | Side-by-side comparison via cards/profile | Card components |
 | **Saving (Bookmarks)** | `saved_providers_screen.dart` | `SavedProvidersController.toggle()` + `SavedProviderRepository.toggle()` | Mock toggles in-memory set; persists to `localsaathi.saved_providers` as JSON string set | None — fully persisted | Add/remove from local bookmarks | `SavedProviderRepository` |
-| **Reporting** | `report_listing_sheet.dart` (bottom sheet) | `EngagementRepository.record()` with type `reportListing` | Mock records to `localsaathi.reports` as JSON list | Fire-and-forget; no validation | Submit report → Supabase `reports` table | `EngagementRepository` |
+| **Reporting** | `report_listing_sheet.dart` (bottom sheet) | `ReportRepository.submit()` (`MockReportRepository`); no engagement event is recorded | Mock inserts a `Report` and persists to `localsaathi.reports` as JSON list | Reason is required (snackbar if missing); details optional | Submit report → Supabase `reports` table | `ReportRepository` |
 | **Contact — Call** | `provider_contact.dart` | `ProviderContactActions.call()` → URL launcher | Mock shows snackbar: `dialerNotWired` (line 94 of provider_contact.dart) | ❌ Stops at snackbar message | Dial `tel:<phoneE164>` | `url_launcher` package |
 | **Contact — WhatsApp** | `provider_contact.dart` | `ProviderContactActions.whatsapp()` → URL launcher | Mock shows snackbar: `whatsappNotWired` (line 111 of provider_contact.dart) | ❌ Stops at snackbar message | Open WhatsApp via `https://wa.me/<phoneE164>` | `url_launcher` package |
 
@@ -93,7 +93,7 @@ recentSearches          ← Query history (not yet wired in UI)
 
 ## Reviewer browser walkthrough (2026-10-06)
 
-Method: `flutter build web --no-pub --release` → served `build/web` (launch config `site`, port 5174) → in-app browser at 375×812 (mobile emulation), localStorage cleared for a fresh guest. Screenshots are kept in the session's tool-results folder (not committed).
+Method: `flutter build web --no-pub --release` → served `build/web` (launch config `site`, port 5174) → in-app browser at 375×812 (mobile emulation), localStorage cleared for a fresh guest. Screenshots were left in an ephemeral session folder and are **not** retained as evidence; the persistent evidence for the gaps is the widget test below.
 
 | Step | Observed | Verdict |
 |---|---|---|
@@ -114,5 +114,15 @@ Method: `flutter build web --no-pub --release` → served `build/web` (launch co
 - Browser re-check after rebuild: Marathi home/categories/account render with Marathi nav labels (मुख्यपृष्ठ, श्रेणी, जतन केलेले, खाते); console errors while navigating = **0** (counted with a `console.error` hook).
 - Rollback: revert those two files and delete the test.
 
-### Not exercised in the browser (honest list)
-Reporting flow, comparison, Hindi specifically (same root cause and fix as Marathi; covered by the unit test), large-text/accessibility scaling.
+### Gaps closed by widget test (2026-10-07)
+`test/customer_journey_gaps_test.dart` → **+3 −0**:
+- Hindi locale: home pumps with `hi` stored, no exceptions, NavigationBar renders.
+- Large text: home at 2.0× text scale on a 375×812 surface, no exceptions (no RenderFlex overflow).
+- Reporting: sheet → pick "Wrong phone number" → Report → `ReportRepository.hasReported` is true with the chosen reason.
+
+### Still not exercised
+- **Comparison:** there is no comparison feature; "comparison" is only scanning provider cards in results (covered by the home smoke test rendering `ProviderCard`). A real side-by-side compare is not built.
+- Large-text and Hindi were checked in a widget test, not a real device/browser; visual truncation (not exceptions) is unchecked.
+
+## 2026-10-07 audit follow-up
+See `tasks/evidence/audit-2026-10-07-followup.md`. Trust copy fixed ("Phone-verified & active"; welcome subhead); a test now rejects any unqualified "verified" literal in l10n.

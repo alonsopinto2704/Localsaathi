@@ -41,20 +41,27 @@ class MockServiceCatalogRepository implements ServiceCatalogRepository {
   Future<List<ServiceGroup>> groups() async => _groups;
 
   @override
-  Future<List<ServiceCategory>> categories() async => _categories;
+  Future<List<ServiceCategory>> categories() async => _launchCategories;
+
+  /// Customer and onboarding lists show only categories open for listings;
+  /// lookups by id still resolve every category (old saved data, editors).
+  static final List<ServiceCategory> _launchCategories =
+      List<ServiceCategory>.unmodifiable(
+    _categories.where((ServiceCategory c) => c.isApprovedForLaunch),
+  );
 
   @override
   Future<List<ServiceCategory>> categoriesByGroup(String groupId) async =>
-      _categories.where((ServiceCategory c) => c.groupId == groupId).toList();
+      _launchCategories.where((ServiceCategory c) => c.groupId == groupId).toList();
 
   @override
-  Future<List<ServiceCategory>> popularCategories() async => _categories
-      .where((ServiceCategory c) => c.isPopular && c.isApprovedForLaunch)
+  Future<List<ServiceCategory>> popularCategories() async => _launchCategories
+      .where((ServiceCategory c) => c.isPopular)
       .toList();
 
   @override
   Future<List<ServiceCategory>> healthcareCategories() async =>
-      _categories.where((ServiceCategory c) => c.isHealthcare).toList();
+      _launchCategories.where((ServiceCategory c) => c.isHealthcare).toList();
 
   @override
   Future<ServiceCategory?> categoryById(String id) async => _byId[id];
@@ -75,7 +82,7 @@ class MockServiceCatalogRepository implements ServiceCatalogRepository {
   @override
   Future<List<CategoryWithGroup>> categoriesWithGroup() async =>
       <CategoryWithGroup>[
-        for (final ServiceCategory category in _categories)
+        for (final ServiceCategory category in _launchCategories)
           if (_groupsById[category.groupId] != null)
             CategoryWithGroup(
               category: category,

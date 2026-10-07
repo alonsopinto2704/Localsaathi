@@ -33,7 +33,7 @@ Provide a public response distinct from owner data and built from an allowlist. 
   - forbidden keys are absent.
 - `0005_private_fields`: `moderationStatus` is absent from search and profile.
 - HTTP pack self-test: a fake response carrying `phone_e164`/`moderationStatus` makes the pack FAIL (phase 039).
-- Suite result: `node backend/scripts/verify-db.mjs` → `Tests: 14/14 files passed, 149/149 assertions passed. PASS`.
+- Suite result: `node backend/scripts/verify-db.mjs` → `Tests: 14/14 files passed, 151/151 assertions passed. PASS`.
 
 ## Residual risk
 `healthcareDetails.registrationNumber` and `clinicAddress` are public by design (business directory facts). Healthcare stays disabled at launch (phases 009/017). Confirm with counsel before enabling it.

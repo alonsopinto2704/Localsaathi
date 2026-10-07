@@ -31,6 +31,7 @@ create function tests.vis(p_a uuid, p_b uuid) returns jsonb language sql as $$
 $$;
 grant execute on function tests.vis(uuid, uuid) to anon, authenticated;
 
+select tests.set_flag('sponsored_placement', true);
 create temporary table expect (visible jsonb, hidden jsonb);
 select tests.share_fixture('expect');
 insert into expect values (

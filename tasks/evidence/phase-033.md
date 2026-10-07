@@ -30,7 +30,7 @@ The source is a throttling signal, not proof of identity (plan rule). Phones beh
 ## Verification
 - `0011_guest_writes` (17 assertions) covers receipts, de-duplication, every bound, the 6th-report limit, the engagement cap, and phone provenance.
 - Direct anon INSERT into all three tables fails with 42501.
-- Suite: `Tests: 14/14 files passed, 149/149 assertions passed. PASS`.
+- Suite: `Tests: 14/14 files passed, 151/151 assertions passed. PASS`.
 
 ## Not verified
 - PGlite has no real edge, so the tests set synthetic `cf-connecting-ip`/`x-forwarded-for` headers.

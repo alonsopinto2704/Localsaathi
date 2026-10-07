@@ -5,6 +5,8 @@ import '../../domain/models/enums.dart';
 import '../../domain/models/moderation.dart';
 import '../../domain/models/provider.dart';
 import '../local/key_value_store.dart';
+import '../../domain/models/service_category.dart';
+import '../seed/category_seed.dart';
 import '../seed/provider_seed.dart';
 
 /// The single in-memory database behind the mock repositories.
@@ -76,10 +78,18 @@ class MockDataStore {
     return id == null ? null : accountsById[id];
   }
 
-  /// Every published listing. The only source customer surfaces read from.
-  List<ProviderProfile> get publishedProfiles => profilesById.values
-      .where((ProviderProfile p) => p.isPubliclyVisible)
-      .toList();
+  /// Every listed listing. The only source customer surfaces read from.
+  List<ProviderProfile> get publishedProfiles =>
+      profilesById.values.where(isListed).toList();
+
+  /// Mirrors the server's is_publicly_listed: published and offering at least
+  /// one category that is open for listings at launch.
+  static final Set<String> _approvedCategoryIds = <String>{
+    for (final ServiceCategory c in CategorySeed.categories)
+      if (c.isApprovedForLaunch) c.id,
+  };
+  bool isListed(ProviderProfile p) =>
+      p.isPubliclyVisible && p.categoryIds.any(_approvedCategoryIds.contains);
 
   // -------------------------------------------------------------- seeding
   void _seedData() {

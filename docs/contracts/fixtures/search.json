@@ -1,11 +1,12 @@
 {
-  "fixtureVersion": 1,
+  "fixtureVersion": 2,
   "name": "search",
   "synthetic": true,
   "operation": "rpc search_providers (ProviderRepository.search)",
   "notes": [
+    "Re-baselined 2026-10-07 to migrations through 20261006000021 (v2). v1 described 0001-0012.",
     "All data is fictional. Phones are +91 98xxxx0000 placeholders.",
-    "Both providers have phoneDisplayConsented=true. Today's SQL always emits phoneE164; the target projection (Phase 022) emits null when consent is false, and Dart ProviderProfile.fromJson currently throws on a null phoneE164 (lib/domain/models/provider.dart:735).",
+    "Both providers have phoneDisplayConsented=true. Since 20261006000016_public_projection.sql phoneE164 is null when phoneDisplayConsented is false; Dart ProviderProfile.fromJson must accept a null phoneE164 (phase-014 #3).",
     "Dart ProviderPhoto.fromJson ignores remoteUrl (provider.dart:245-251), so photos[].remoteUrl is not rendered by the current client.",
     "Working hours: open/close are minutes since local midnight; open=null and close=null is a closed day; close<=open is an overnight window (Friday 1320-120 below); 24h is open=0 close=1439 (1440 is not representable)."
   ],
@@ -13,12 +14,17 @@
     "request": {
       "method": "POST",
       "path": "/rest/v1/rpc/search_providers",
-      "headers": {"apikey": "<anon-key>", "content-type": "application/json"},
+      "headers": {
+        "apikey": "<anon-key>",
+        "content-type": "application/json"
+      },
       "body": {
         "p_city_id": "mh-mumbai",
         "p_locality_id": "mh-mumbai-andheri-west",
         "p_text": "tap leak",
-        "p_category_ids": ["plumbing"],
+        "p_category_ids": [
+          "plumbing"
+        ],
         "p_locality_filter_ids": [],
         "p_open_now_only": false,
         "p_home_visits_only": false,
@@ -42,35 +48,97 @@
               "status": "published",
               "createdAt": "2026-09-01T10:00:00+00:00",
               "updatedAt": "2026-09-20T08:30:00+00:00",
-              "categoryIds": ["plumbing"],
+              "categoryIds": [
+                "plumbing"
+              ],
               "serviceAreas": [
-                {"cityId": "mh-mumbai", "localityId": "mh-mumbai-andheri-west", "pinCodes": ["400058"], "isPrimary": true},
-                {"cityId": "mh-mumbai", "localityId": "mh-mumbai-andheri-east", "pinCodes": [], "isPrimary": false}
+                {
+                  "cityId": "mh-mumbai",
+                  "localityId": "mh-mumbai-andheri-west",
+                  "pinCodes": [
+                    "400058"
+                  ],
+                  "isPrimary": true
+                },
+                {
+                  "cityId": "mh-mumbai",
+                  "localityId": "mh-mumbai-andheri-east",
+                  "pinCodes": [],
+                  "isPrimary": false
+                }
               ],
               "description": "Tap, pipe and drain repair. Home visits across Andheri.",
-              "languages": ["hi", "mr", "en"],
+              "languages": [
+                "hi",
+                "mr",
+                "en"
+              ],
               "workingHours": {
                 "days": [
-                  {"weekday": 1, "open": 540, "close": 1200},
-                  {"weekday": 2, "open": 540, "close": 1200},
-                  {"weekday": 3, "open": 540, "close": 1200},
-                  {"weekday": 4, "open": 540, "close": 1200},
-                  {"weekday": 5, "open": 540, "close": 1200},
-                  {"weekday": 6, "open": 540, "close": 1200},
-                  {"weekday": 7, "open": null, "close": null}
+                  {
+                    "weekday": 1,
+                    "open": 540,
+                    "close": 1200
+                  },
+                  {
+                    "weekday": 2,
+                    "open": 540,
+                    "close": 1200
+                  },
+                  {
+                    "weekday": 3,
+                    "open": 540,
+                    "close": 1200
+                  },
+                  {
+                    "weekday": 4,
+                    "open": 540,
+                    "close": 1200
+                  },
+                  {
+                    "weekday": 5,
+                    "open": 540,
+                    "close": 1200
+                  },
+                  {
+                    "weekday": 6,
+                    "open": 540,
+                    "close": 1200
+                  },
+                  {
+                    "weekday": 7,
+                    "open": null,
+                    "close": null
+                  }
                 ]
               },
               "photos": [
-                {"id": "5a1d2c3b-0000-4000-8000-000000000001", "caption": "Pipe fitting", "remoteUrl": "https://example.invalid/storage/v1/object/public/provider-photos/demo-user-1/pipe.jpg", "isPlaceholder": false, "uploadedAt": "2026-09-02T06:15:00+00:00"}
+                {
+                  "id": "5a1d2c3b-0000-4000-8000-000000000001",
+                  "caption": "Pipe fitting",
+                  "remoteUrl": "https://example.invalid/storage/v1/object/public/provider-photos/demo-user-1/pipe.jpg",
+                  "isPlaceholder": false,
+                  "uploadedAt": "2026-09-02T06:15:00+00:00"
+                }
               ],
-              "startingPrices": [{"categoryId": "plumbing", "amount": 250, "note": "visit charge"}],
+              "startingPrices": [
+                {
+                  "categoryId": "plumbing",
+                  "amount": 250,
+                  "note": "visit charge"
+                }
+              ],
               "healthcareDetails": null,
               "homeVisits": true,
               "availability": "available",
               "whatsappEnabled": true,
               "phoneDisplayConsented": true,
-              "verification": {"phone": "approved"},
-              "pinCodes": ["400058"],
+              "verification": {
+                "phone": "approved"
+              },
+              "pinCodes": [
+                "400058"
+              ],
               "mapLocation": null
             }
           },
@@ -85,22 +153,64 @@
               "status": "published",
               "createdAt": "2026-09-05T11:00:00+00:00",
               "updatedAt": "2026-09-05T11:00:00+00:00",
-              "categoryIds": ["plumbing"],
+              "categoryIds": [
+                "plumbing"
+              ],
               "serviceAreas": [
-                {"cityId": "mh-mumbai", "localityId": "mh-mumbai-andheri-west", "pinCodes": [], "isPrimary": false},
-                {"cityId": "mh-mumbai", "localityId": "mh-mumbai-andheri-east", "pinCodes": [], "isPrimary": true}
+                {
+                  "cityId": "mh-mumbai",
+                  "localityId": "mh-mumbai-andheri-west",
+                  "pinCodes": [],
+                  "isPrimary": false
+                },
+                {
+                  "cityId": "mh-mumbai",
+                  "localityId": "mh-mumbai-andheri-east",
+                  "pinCodes": [],
+                  "isPrimary": true
+                }
               ],
               "description": null,
-              "languages": ["hi"],
+              "languages": [
+                "hi"
+              ],
               "workingHours": {
                 "days": [
-                  {"weekday": 1, "open": 0, "close": 1439},
-                  {"weekday": 2, "open": 0, "close": 1439},
-                  {"weekday": 3, "open": 0, "close": 1439},
-                  {"weekday": 4, "open": 0, "close": 1439},
-                  {"weekday": 5, "open": 1320, "close": 120},
-                  {"weekday": 6, "open": null, "close": null},
-                  {"weekday": 7, "open": null, "close": null}
+                  {
+                    "weekday": 1,
+                    "open": 0,
+                    "close": 1439
+                  },
+                  {
+                    "weekday": 2,
+                    "open": 0,
+                    "close": 1439
+                  },
+                  {
+                    "weekday": 3,
+                    "open": 0,
+                    "close": 1439
+                  },
+                  {
+                    "weekday": 4,
+                    "open": 0,
+                    "close": 1439
+                  },
+                  {
+                    "weekday": 5,
+                    "open": 1320,
+                    "close": 120
+                  },
+                  {
+                    "weekday": 6,
+                    "open": null,
+                    "close": null
+                  },
+                  {
+                    "weekday": 7,
+                    "open": null,
+                    "close": null
+                  }
                 ]
               },
               "photos": [],
@@ -121,19 +231,38 @@
   },
   "error": {
     "implementedToday": false,
-    "description": "Proposed gateway behaviour for bulk scraping or an abusive p_limit (no cap exists: migration 0008 line 323). Not produced by current SQL.",
+    "description": "Gateway behaviour for bulk scraping. SQL itself now clamps p_limit to 1..50 (20261006000016_public_projection.sql:173) and never returns 429; RATE_LIMITED here comes only from a future gateway.",
     "request": {
       "method": "POST",
       "path": "/rest/v1/rpc/search_providers",
-      "body": {"p_city_id": "mh-mumbai", "p_locality_id": "mh-mumbai-andheri-west", "p_limit": 100000, "p_offset": 0}
+      "body": {
+        "p_city_id": "mh-mumbai",
+        "p_locality_id": "mh-mumbai-andheri-west",
+        "p_limit": 100000,
+        "p_offset": 0
+      }
     },
     "response": {
       "status": 429,
-      "headers": {"retry-after": "30"},
-      "body": {"error": {"code": "RATE_LIMITED", "message": "Too many search requests; retry later.", "requestId": "req_demo_0001"}}
+      "headers": {
+        "retry-after": "30"
+      },
+      "body": {
+        "error": {
+          "code": "RATE_LIMITED",
+          "message": "Too many search requests; retry later.",
+          "requestId": "req_demo_0001"
+        }
+      }
     }
   },
   "emptyResult": {
-    "response": {"status": 200, "body": {"totalCount": 0, "items": []}}
+    "response": {
+      "status": 200,
+      "body": {
+        "totalCount": 0,
+        "items": []
+      }
+    }
   }
 }

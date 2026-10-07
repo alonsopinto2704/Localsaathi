@@ -426,6 +426,7 @@ class MockProviderAuthRepository implements ProviderAuthRepository {
     _store.accountIdByPhone.remove(move.fromE164);
     _store.accountIdByPhone[move.toE164] = account.id;
     _store.accountsById[account.id] = account.copyWith(
+      phoneE164: move.toE164,
       phoneVerifiedAt: _now,
       lastSignedInAt: _now,
     );

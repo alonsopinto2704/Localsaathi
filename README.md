@@ -70,7 +70,7 @@ lib/
 
 ---
 
-Outside `lib/`: `web/` is the Flutter web shell (the website build), and `showcase/` is the older standalone HTML click-through mock (`python tool/export_web_data.py` refreshes its data).
+Outside `lib/`: `web/` is the Flutter web shell. Preview the real app in a browser with `flutter build web` and the `site` launch config (port 5174).
 
 ---
 

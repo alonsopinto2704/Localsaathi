@@ -1,6 +1,6 @@
 # Phase 013 — Field-level data classification
 
-**Status:** In review
+**Status:** Done (gate passed in phase-020; human sign-off pending)
 
 ## Objective
 
@@ -72,6 +72,7 @@ Default for any column not listed, or added later: class UNCLASSIFIED = `-` for 
 | provider_profiles.pin_codes | PB | R (eligible) | W | R | W | R | R | PIN-level, approximate |
 | provider_profiles.created_at | SY | - | R | R | R | - | R | not needed publicly |
 | provider_profiles.updated_at | SY | R (freshness) | R | R | R | R | R | feeds "last confirmed" |
+| provider_profiles.revision | SY | - | R | R | R | - | R | optimistic-concurrency counter (phase 030); excluded from public projection |
 | provider_profiles.published_at | SY | - | R | R | R | - | R | |
 | provider_profiles.map_lat / map_lng | PB (only after consent) | Rc (consent `show_map_location`) | W via set_map_location only | R | R | Rc | R | EXACT business-premises pin; target: exact only for premises-based providers who chose it, otherwise null; never a home pin |
 | provider_categories.provider_id / category_id | PB | R (eligible) | W | R | W | R | R | |
@@ -99,8 +100,8 @@ Default for any column not listed, or added later: class UNCLASSIFIED = `-` for 
 | consent_records.kind / granted / wording_version | OP (audit) | Ra (derived: contact available, map shown) | R, C via RPC | R | R | Ra | R | kinds: display_phone_number, whatsapp_contact, public_profile, marketing_contact, show_map_location, terms_accepted |
 | consent_records.recorded_at | SY | - | R | R | R | - | R | owner-writable today (0009:148-150), should be server-set |
 | consent_records.phone_e164 | IP | - | R | R | R | - | R | audit copy of identity phone; client-supplied today |
-| consent_records.withdrawn_at | SY | - | R | R | R | - | R | never set (append-only, no UPDATE policy); withdrawal is a new granted=false row **[audit: overstated - no server path sets it, but the owner INSERT policy lets a client set it (executed: row with withdrawn_at accepted).]** |
-| verification_records.id / provider_id / kind / status / created_at | PB (status only) | Rc: kind->status map only | R | R | R | Rc status map | R | public gets `{phone: approved}` only **[audit: WRONG - the public JSON `verification` is kind -> latest status for EVERY kind (0008:152-158), so it also exposes e.g. `credentials: rejected`/`pending`; executed.]** |
+| consent_records.withdrawn_at | SY | - | R | R | R | - | R | append-only, no UPDATE policy; withdrawal is a new granted=false row. As audited (0009): no server path set it, but the owner INSERT policy let a client set it (executed). Since 0015/0017: a check constraint allows it only on withdrawal rows and owner writes go through RPCs (the direct owner INSERT policy was dropped) |
+| verification_records.id / provider_id / kind / status / created_at | PB (status only) | Rc: kind->status map only | R | R | R | Rc status map | R | As audited, the 0008 public JSON exposed the latest status for **every** kind (e.g. `credentials: rejected`/`pending`; executed). Since `20261006000016_public_projection.sql:103-107` the public map contains only kinds whose latest status is `approved` (phone, and a credential once a reviewer approved it) |
 | verification_records.method | OP | - | R | R | R | - | R | e.g. otp_sms, document_review |
 | verification_records.reviewed_by | MI | - | - (target); R today (0009:162-164) | R | R | - | - | admin uid; leaks reviewer identity |
 | verification_records.reviewed_at | OP | - | R | R | R | - | R | |
@@ -117,6 +118,8 @@ Default for any column not listed, or added later: class UNCLASSIFIED = `-` for 
 | reports.details | MI | - | - | R | R | - | - | free text up to 1000 chars (0005:93); may contain third-party PII |
 | reports.reporter_phone_e164 | IP (third party) | - | - | R (masked default) | R | - | - | reporter is a guest customer; never to the owner |
 | reports.created_at | SY | - | - | R | R | - | - | |
+| reports.reporter_source | MI | - | - | R | R | - | - | server-derived source key for duplicate-report throttling (0018); never client-readable |
+| reports.provider_snapshot | MI | - | - | R | R | - | - | provider details kept after the listing is deleted so moderation history survives (0019) |
 | reports.reviewed_at / resolution_note | MI | - | - | W | W | - | - | resolution_note must never reach the owner or any AI |
 
 ### Engagement and monetization (0006)
@@ -211,18 +214,18 @@ No quota, no CAPTCHA/attestation, no abuse counters.
 
 ## Recommended allowlist public projection (description only; Phase 022 implements)
 
-1. **Revoke first.** `revoke all on all tables in schema public from anon, authenticated, public` for the provider/consent/credential/report tables, then re-grant only what clients need; `revoke execute on all functions in schema public from public, anon, authenticated`; `alter default privileges ... revoke execute on functions from public, anon, authenticated`. Re-grant EXECUTE on an explicit list: anon gets only `get_public_profile`, `search_providers`, `similar_providers`, `provider_count_by_locality`, `providers_published_in_city`, `active_promotions`, `search_cities`, `search_categories` (plus a future `submit_report`, `record_engagement`, `request_city`). Authenticated additionally gets the owner RPCs. Admin-only functions are granted to a dedicated admin role or called from a protected admin function only.
+1. **Revoke first.** `revoke all on all tables in schema public from anon, authenticated, public` for the provider/consent/credential/report tables, then re-grant only what clients need; `revoke execute on all functions in schema public from public, anon, authenticated`; `alter default privileges ... revoke execute on functions from public, anon, authenticated`. Re-grant EXECUTE on an explicit list. **Functions called from RLS/Storage policies must stay executable by the roles those policies run as** (at least `is_admin()`; audit executed: revoking it makes anon reads fail `42501 permission denied for function is_admin`), or the policies must be rewritten first. Beyond those, anon gets only `get_public_profile`, `search_providers`, `similar_providers`, `provider_count_by_locality`, `providers_published_in_city`, `active_promotions`, `search_cities`, `search_categories` (plus a future `submit_report`, `record_engagement`, `request_city`). Authenticated additionally gets the owner RPCs. Admin-only functions are granted to a dedicated admin role or called from a protected admin function only.
 2. **One internal builder.** `provider_public_json(p_id)` (SECURITY DEFINER, `set search_path = ''`, not executable by API roles) builds the public shape from an explicit column list. It emits: `id`, `displayName`, `baseCityId`, `baseLocalityId`, `description`, `languages`, `homeVisits`, `availability`, `categoryIds`, `serviceAreas` (city, locality, pin codes), `workingHours`, `photos` (id, caption, validated public URL, uploadedAt), `startingPrices`, `healthcareDetails` (claimed, labelled), `verification` as `{kind: status}` only, `mapLocation` only with consent, `updatedAt`, `isSponsored`. It never emits `user_id`, `phone_e164`, `moderation_status`, `suspension_reason`, `published_at`, `created_at`, reviewer fields or notes. Contact appears as `contact: {phone, whatsapp}` only when `phone_display_consented` (and WhatsApp consent) hold; otherwise `contact: null`. All eight public RPCs call this single builder so shapes cannot drift (today the owner and public shapes share one builder and subtract fields, which is the pattern the plan forbids: 0008:177, 330, 356, 679).
 3. **Move contact out of lists.** Search and list payloads omit the phone; a `reveal_contact(p_provider_id)` RPC returns it (rate-limited per device/IP, records the engagement tap, rechecks eligibility and consent at call time). This also gives immediate revocation.
 4. **Make direct table access owner-only and narrow.** Public gets no SELECT on `provider_profiles` or child tables. Owner writes go through RPCs or a column-level grant list that excludes `phone_e164`, `user_id`, `moderation_*`, `suspension_reason`, `published_at`, `created_at`, `map_*`.
 5. **Clamp and page.** `p_limit` clamped to 1..50 in SQL, `null` mapped to the default, unique tiebreaker (`id`) in ORDER BY, no unpaged city dump.
 6. **Anonymous writes through RPCs only** (`submit_report`, `record_engagement`, `request_city`) with server-set status/time, length caps, per-device rate limit, and an existence check that returns an indistinguishable result for unknown and hidden providers.
-7. **Default-deny regression test.** A pgTAP test enumerates `information_schema.columns` for `public` and fails if a column is not in a committed classification file (this document's matrix as a machine-readable allowlist), and a second test asserts `jsonb_object_keys(get_public_profile(...))` equals the allowlist exactly and that anon `select` on `provider_profiles` is denied.
+7. **Default-deny regression test.** Done 2026-10-07: `docs/contracts/column-classification.json` is this matrix as a machine-readable allowlist (161 columns), and `backend/scripts/verify-db.mjs` fails if any live `public` column is missing from it or a listed column no longer exists (proved by deleting one entry → `FAIL column classification`, exit 1). The second half already exists in `0007_public_projection.test.sql`, which asserts `jsonb_object_keys(get_public_profile(...))` equals the allowlist exactly and that anon `select` on `provider_profiles` is denied.
 8. **Photos.** Server-validated upload (size, MIME, re-encode, EXIF strip) writes `remote_url`; clients never write it. Cleanup on unpublish/suspend (move to private or delete) and on account deletion.
 
 ## Residual uncertainty
 
-- Not executed: no pgTAP/PGlite run, no live PostgREST probing. All exposure statements are from reading grants, policies and function bodies; each is cheap to prove with an anon `select`/`rpc` call once a local stack runs (Phase 022 should add those as failing tests first).
+- SQL exposure claims were executed in PGlite during the independent audit below; live PostgREST probing is still not done (Phase 006 blocked; Phase 039 pack is ready).
 - UNVERIFIED: GoTrue stores `auth.users.phone` without a leading `+`, while `my_account()`/triggers/tests assume E.164 with `+` (the test helper inserts `+91...` directly, `0000_helpers.sql:18-22`). If true, `phone_e164` equality, uniqueness and the Dart `phoneE164` contract all need normalisation.
 - UNVERIFIED: hosted project sign-up settings (email, anonymous) and default privileges (F4 scope, F12).
 - `moderator`, `AI(owner)` and `AI(guest)` columns describe the target; none of those actors exists in the schema yet.
@@ -297,3 +300,6 @@ Method: every citation opened; SQL behaviour executed in PGlite with the repo ha
 | Rec 2: internal builder not executable by API roles; all public RPCs call it | Recommendation 2 | Confirmed | Executed: revoked `provider_profile_json(_core)` from public/anon/authenticated; anon `get_public_profile`, `search_providers` and owner `my_profile` still work (SECURITY DEFINER callers run it as owner); direct anon call -> `42501`. This also shows the `0009_rls.sql:6-14` rationale (callees need EXECUTE for the calling role) is wrong for SECURITY DEFINER callers. |
 | UNVERIFIED: GoTrue stores phone without leading `+` | Residual | Understated | The repo itself asserts it: `supabase-stub.sql:36` "GoTrue stores `phone` WITHOUT the leading '+'" (cites `internal/api/phone.go`); still not provable locally against a real GoTrue. |
 | Phase 014 fixtures "already assume the target contact shape" | Next action | Overstated | `search.json:38,81`, `public-profile.json:22`, `registration.json:51` still emit `phoneE164` (current shape); only a `notes` entry (`search.json:8`) mentions the target. |
+
+## 2026-10-07 audit follow-up
+See `tasks/evidence/audit-2026-10-07-followup.md`. `docs/contracts/column-classification.json` now covers 166 columns (feature_flags added); `provider_photos.storage_path` (OP) is withheld from the public projection unless it is listing-keyed.

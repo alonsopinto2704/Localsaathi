@@ -1,6 +1,6 @@
 # Phase 007 — Release configuration baseline
 
-**Status:** In review
+**Status:** Done (gate passed in phase-020; human sign-off pending)
 
 **Objective:** Inspect build configuration (Gradle, SDK targets, signing, permissions, dependencies) and identify paths that permit debug signing or mock dependencies in release builds. Produce fail-closed matrix for debug/staging/production.
 
@@ -178,14 +178,25 @@ static Future<AppDependencies> mock({
    - Current: No validation (FAIL-OPEN).
    - Required fix: Add build-time or startup assertions that SUPABASE_URL and SUPABASE_ANON_KEY are non-empty strings before any network I/O.
 
-4. **Staging builds MUST use production signing but staging Supabase project.**
+4. **Release build MUST fail while development/placeholder constants in `lib/core/config/app_config.dart` are still set** (inspected 2026-10-07; all are `static const`, so a release check can be a compile-time `assert` or a CI grep):
+   | Constant (line) | Current value | Production requirement |
+   |---|---|---|
+   | `useDevelopmentOtpSimulation` (37) | `true` | must be `false`; OTP must come from the backend |
+   | `developmentOtpCode` (40) | `'123456'` | must be unreachable when simulation is off |
+   | `engagementStatsAreSampleData` (58) | `true` | `false` only once stats come from `engagement_events` |
+   | `legalTextReviewed` (72) | `false` | `true` only after legal review (otherwise pages show a draft banner) |
+   | `operatorLegalName`, `operatorAddress`, `grievanceOfficerName` (79–82) | `[...]` placeholders | real values (IT Rules 2021, DPDP Act) |
+   | `supportEmail`, `grievanceOfficerEmail`, `privacyEmail`, `shareBaseUrl` (23, 60, 83–84) | `*.example` domains | real domain |
+
+5. **Staging builds MUST use production signing but staging Supabase project.**
    - Current: No staging configuration (not implemented).
    - Proposed: Add buildTypes.staging with same signing as release but different --dart-define values.
 
 ## Unresolved build checks
 
 - **Release APK not built.** Gradle/APK builds skipped per RAM constraints (16GB; no permission to run).
-- **Supabase environment variables not validated at runtime.** main.dart assumes AppConfig provides secrets; actual source not inspected.
+- **Supabase environment variables not validated at runtime.** `app_config.dart` was inspected (2026-10-07): it holds no Supabase URL/key at all, and `supabase_flutter` is in pubspec but not initialised; the dev/placeholder constants it does hold are listed in fail-closed requirement 4.
+- **R8 rules checked.** `android/app/proguard-rules.pro` exists and keeps `io.flutter.**`, `io.flutter.plugins.**` and the shared_preferences plugin. No rules for `supabase_flutter`/`url_launcher` yet; both are Dart-side or ship consumer rules, so this is only proven by a release build smoke test (not run: RAM constraint).
 - **Play Data Safety form.** No risks flagged; app declares INTERNET only and no user data collection; however, if Supabase backend later logs requests, disclosure required.
 - **Staging variant not implemented.** Proposed but not wired; Phase 281+ will need this.
 

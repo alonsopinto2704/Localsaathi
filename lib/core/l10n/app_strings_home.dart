@@ -20,7 +20,8 @@ extension HomeStringsX on AppStrings {
   String get liveArea => 'Live area';
   String get whatDoYouNeed => 'What do you need help with?';
   String providersInLocality(String locality) => 'Providers in $locality';
-  String get verifiedAndActive => 'Verified & active';
+  // Phone verification only: never imply a professional check (phase 002).
+  String get verifiedAndActive => 'Phone-verified & active';
   String get promotedByProvider => 'Promoted by the provider';
   String servesMoreAreas(int n) =>
       n == 1 ? 'serves 1 more area' : 'serves $n more areas';
@@ -41,7 +42,7 @@ extension HomeStringsX on AppStrings {
   String get welcomeTagline => 'Find local help, nearby.';
   String get welcomeHeadline => 'Find the right help near you';
   String get welcomeSubhead =>
-      'Connect directly with verified plumbers, electricians, mechanics and other local professionals in your neighbourhood.';
+      'Connect directly with plumbers, electricians, mechanics and other local professionals in your neighbourhood. Every listed number is phone-confirmed.';
   String providersListedIn(int n, String city) =>
       n == 1 ? '1 provider listed in $city' : '$n providers listed in $city';
   String get directDiscovery => 'Direct contact · zero commission';
@@ -120,7 +121,7 @@ extension ProviderStringsX on AppStrings {
   String get listingPausedExplainer =>
       'While your listing is paused it is hidden from customers. Your profile and statistics are kept.';
   String get oneNumberOneProfileStrong =>
-      'Each verified number can hold exactly one public profile.';
+      'Each phone-verified number can hold exactly one public profile.';
   String get whatsappSeparateConsent =>
       'WhatsApp visibility is a separate choice from showing your phone number.';
   String get homeBasedPrivacyTitle => 'Home-based providers';

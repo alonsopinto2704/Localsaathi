@@ -1,19 +1,26 @@
 {
-  "fixtureVersion": 1,
+  "fixtureVersion": 2,
   "name": "public-profile",
   "synthetic": true,
   "operation": "rpc get_public_profile (ProviderRepository.publicProfileById)",
   "notes": [
+    "Re-baselined 2026-10-07 to migrations through 20261006000021 (v2). v1 described 0001-0012.",
     "Healthcare details are provider-claimed, never verified; verification.credentials appears only after admin review.",
-    "mapLocation is the exact pin the provider opted into (consent kind show_map_location); a target projection may round it to approximate for non-premises providers.",
-    "moderationStatus is stripped by get_public_profile (migration 0008 line 177)."
+    "mapLocation is rounded to 2 decimals (~1 km) by public_profile_json (20261006000016_public_projection.sql:110-111), only when the provider consented (show_map_location).",
+    "moderationStatus is never emitted: public_profile_json is an explicit allowlist (20261006000016) asserted by 0007_public_projection.test.sql.",
+    "verification lists only kinds whose latest status is approved (20261006000016:103-107); pending/rejected credentials are never public.",
+    "Healthcare variant: this listing is a dentist, which is NOT approved for launch (phase-009 pilot; seed.sql sets is_approved_for_launch=false and the healthcare_listings flag is off). Against launch data it is not listed at all and get_public_profile returns null. The shape is kept so the healthcareDetails contract stays tested for when healthcare opens."
   ],
   "success": {
     "request": {
       "method": "POST",
       "path": "/rest/v1/rpc/get_public_profile",
-      "headers": {"apikey": "<anon-key>"},
-      "body": {"p_id": "0f3c1a2e-7b44-4d0a-9a51-6c2d0e5b1a03"}
+      "headers": {
+        "apikey": "<anon-key>"
+      },
+      "body": {
+        "p_id": "0f3c1a2e-7b44-4d0a-9a51-6c2d0e5b1a03"
+      }
     },
     "response": {
       "status": 200,
@@ -26,25 +33,72 @@
         "status": "published",
         "createdAt": "2026-08-20T09:00:00+00:00",
         "updatedAt": "2026-09-25T12:45:00+00:00",
-        "categoryIds": ["dentist"],
+        "categoryIds": [
+          "dentist"
+        ],
         "serviceAreas": [
-          {"cityId": "mh-mumbai", "localityId": "mh-mumbai-bandra-west", "pinCodes": ["400050"], "isPrimary": true}
+          {
+            "cityId": "mh-mumbai",
+            "localityId": "mh-mumbai-bandra-west",
+            "pinCodes": [
+              "400050"
+            ],
+            "isPrimary": true
+          }
         ],
         "description": "General dentistry and scaling. Appointments preferred.",
-        "languages": ["en", "hi", "mr"],
+        "languages": [
+          "en",
+          "hi",
+          "mr"
+        ],
         "workingHours": {
           "days": [
-            {"weekday": 1, "open": 600, "close": 1080},
-            {"weekday": 2, "open": 600, "close": 1080},
-            {"weekday": 3, "open": 600, "close": 1080},
-            {"weekday": 4, "open": 600, "close": 1080},
-            {"weekday": 5, "open": 600, "close": 1080},
-            {"weekday": 6, "open": 600, "close": 840},
-            {"weekday": 7, "open": null, "close": null}
+            {
+              "weekday": 1,
+              "open": 600,
+              "close": 1080
+            },
+            {
+              "weekday": 2,
+              "open": 600,
+              "close": 1080
+            },
+            {
+              "weekday": 3,
+              "open": 600,
+              "close": 1080
+            },
+            {
+              "weekday": 4,
+              "open": 600,
+              "close": 1080
+            },
+            {
+              "weekday": 5,
+              "open": 600,
+              "close": 1080
+            },
+            {
+              "weekday": 6,
+              "open": 600,
+              "close": 840
+            },
+            {
+              "weekday": 7,
+              "open": null,
+              "close": null
+            }
           ]
         },
         "photos": [],
-        "startingPrices": [{"categoryId": "dentist", "amount": 500, "note": "consultation"}],
+        "startingPrices": [
+          {
+            "categoryId": "dentist",
+            "amount": 500,
+            "note": "consultation"
+          }
+        ],
         "healthcareDetails": {
           "qualification": "BDS (claimed)",
           "specialty": "General dentistry",
@@ -60,9 +114,16 @@
         "availability": "available",
         "whatsappEnabled": false,
         "phoneDisplayConsented": true,
-        "verification": {"phone": "approved"},
-        "pinCodes": ["400050"],
-        "mapLocation": {"lat": 19.06, "lng": 72.83}
+        "verification": {
+          "phone": "approved"
+        },
+        "pinCodes": [
+          "400050"
+        ],
+        "mapLocation": {
+          "lat": 19.06,
+          "lng": 72.83
+        }
       }
     }
   },
@@ -71,12 +132,19 @@
     "request": {
       "method": "POST",
       "path": "/rest/v1/rpc/get_public_profile",
-      "body": {"p_id": "00000000-0000-4000-8000-000000000000"}
+      "body": {
+        "p_id": "00000000-0000-4000-8000-000000000000"
+      }
     },
     "response": {
       "status": 200,
       "wireBody": null,
-      "normalized": {"error": {"code": "NOT_FOUND", "message": "Listing not found or not public."}}
+      "normalized": {
+        "error": {
+          "code": "NOT_FOUND",
+          "message": "Listing not found or not public."
+        }
+      }
     }
   }
 }

@@ -24,7 +24,7 @@ No helper is callable from the API unless it is allowlisted. Nested calls keep w
   - `pg_trgm` lives in `extensions`;
   - anon has no USAGE on `private`.
 - **Mutation check:** appending `grant execute on function public.provider_profile_json(uuid) to anon` to a migration fails `0006` (`not ok 1 - anon can execute exactly the discovery allowlist…`, exit 1). The file was restored afterwards and verified with `cmp`.
-- Suite: `Tests: 14/14 files passed, 149/149 assertions passed. PASS`.
+- Suite: `Tests: 14/14 files passed, 151/151 assertions passed. PASS`.
 
 ## Rollback
 Restore only a specifically justified grant (plan rule). Never re-run 0009's blanket grant.

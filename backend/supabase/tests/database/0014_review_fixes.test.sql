@@ -1,7 +1,8 @@
 -- Regressions for the /code-review findings on migrations 0014-0018.
 -- Phone range +91900000140x.
 begin;
-select plan(9);
+select plan(11);
+select tests.set_flag('media_intake', true);
 select tests.ensure_reference_data();
 
 create temporary table fx (key text primary key, value text);
@@ -74,6 +75,20 @@ select tests.authenticate_as_anon();
 select ok(
   (public.search_providers('test-active-city', 'test-locality-a')->>'totalCount')::int >= 1,
   're-approving the category brings it back');
+reset role;
+
+-- 7. Red-team F2/F3: consent changes are throttled; photo changes bump revision.
+select tests.authenticate_as((select value::uuid from fx where key = 'owner'));
+select throws_like(
+  format($sql$ select public.record_consent(%L::uuid, 'marketing_contact', (g %% 2 = 0)) from generate_series(1, 61) g $sql$,
+         (select value from fx where key = 'a')),
+  '%rate_limited%', 'the 61st consent change within an hour is refused');
+insert into fx select 'rev0', (public.get_owner_profile((select value::uuid from fx where key = 'a'))->>'revision');
+select ok(
+  (public.add_provider_photo((select value::uuid from fx where key = 'a'),
+     (select value from fx where key = 'a') || '/p1.jpg', 'x')->>'revision')::bigint
+   > (select value::bigint from fx where key = 'rev0'),
+  'adding a photo bumps the profile revision');
 reset role;
 
 select * from finish();

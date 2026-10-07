@@ -36,7 +36,7 @@ Migration `…17`: `private.validate_profile_payload` (shared), `register_profil
   - an invalid locality in an update leaves categories **and** hours unchanged (an injected failure preserves the prior profile);
   - an identical retry returns identical JSON and produces one profile;
   - a changed payload under the same key returns conflict.
-- Suite: `Tests: 14/14 files passed, 149/149 assertions passed. PASS`.
+- Suite: `Tests: 14/14 files passed, 151/151 assertions passed. PASS`.
 
 ## Rollback
 Transaction rollback; the client keeps its draft.

@@ -40,7 +40,7 @@ No raw-table path may bypass the public projection. Phone, ownership, moderation
 | `create policy leak … using (status = 'published')` | `0008` #10 and #11 |
 
   The first version of the `0008` read check targeted a draft row and **missed** the published-rows mutation. It was retargeted at a published row and now catches it.
-- Suite: `Tests: 14/14 files passed, 149/149 assertions passed. PASS`.
+- Suite: `Tests: 14/14 files passed, 151/151 assertions passed. PASS`.
 
 ## Breaking change
 Clients must use the RPCs (`docs/backend-contract.md` is updated). No client uses Supabase yet: `lib/data/supabase/` does not exist, so nothing in the field breaks.

@@ -34,7 +34,7 @@ Enumerate every table, function, grant, default privilege and policy. Give every
 | service_role only | `mark_storage_cleaned`, `private.purge_expired_records` | Not executable by client roles |
 | Nobody (internal) | `provider_profile_json(_core)`, `public_profile_json`, `is_publicly_listed`, `private.*` helpers, all trigger functions | Called only inside definer functions |
 
-Roles exercised: anon, owner, another owner and admin, across suites `0006`–`0013`. `node backend/scripts/verify-db.mjs` → `Tests: 14/14 files passed, 149/149 assertions passed. PASS`.
+Roles exercised: anon, owner, another owner and admin, across suites `0006`–`0013`. `node backend/scripts/verify-db.mjs` → `Tests: 14/14 files passed, 151/151 assertions passed. PASS`.
 
 ## Not verified here
 Repeating these boundaries through real PostgREST and Storage HTTP (`backend/scripts/http-authz-pack.mjs`, phase 039). It is ready but cannot run without a Supabase project.

@@ -8,6 +8,7 @@
 // (pg_prove) does: one session per file, real pgTAP installed in
 // `extensions`, a file passes only if its plan is met and nothing fails.
 // Exits non-zero on any failure.
+import { readFileSync } from 'node:fs';
 import { createDb, describe, migrate, read, searchPath, sqlFiles } from './db.mjs';
 
 const db = await createDb();
@@ -31,6 +32,26 @@ async function main() {
     return false;
   }
   console.log('Seed applied: seed.sql');
+
+  // Phase 013: every public column must be classified, and nothing stale listed.
+  const classified = Object.keys(
+    JSON.parse(readFileSync(new URL('../../docs/contracts/column-classification.json', import.meta.url), 'utf8')).columns,
+  );
+  const { rows } = await db.query(
+    `select c.table_name || '.' || c.column_name as k from information_schema.columns c
+     join information_schema.tables t using (table_schema, table_name)
+     where c.table_schema = 'public' and t.table_type = 'BASE TABLE'`,
+  );
+  const live = new Set(rows.map((r) => r.k));
+  const unclassified = [...live].filter((k) => !classified.includes(k));
+  const stale = classified.filter((k) => !live.has(k));
+  if (unclassified.length || stale.length) {
+    console.log(`FAIL column classification (docs/contracts/column-classification.json)
+      unclassified: ${unclassified.join(', ') || '-'}
+      stale: ${stale.join(', ') || '-'}`);
+    return false;
+  }
+  console.log(`Column classification: ${live.size}/${live.size} public columns classified`);
 
   await db.exec('create extension if not exists pgtap with schema extensions');
   // Migration 0013 revokes the implicit PUBLIC EXECUTE on new functions, which
@@ -80,6 +101,10 @@ async function main() {
     if (error) problems.push(`error: ${describe(error)}`);
     if (!plan) problems.push('no plan found in TAP output');
     else if (Number(plan[1]) !== results.length) problems.push(`planned ${plan[1]} tests but ran ${results.length}`);
+    const outOfOrder = results.findIndex((l, i) => Number(/ok (\d+)/.exec(l)[1]) !== i + 1);
+    if (outOfOrder !== -1) problems.push(`test numbers not sequential at "${results[outOfOrder]}"`);
+    const bail = lines.find((l) => /^Bail out!/i.test(l));
+    if (bail) problems.push(bail);
     assertions += results.length;
     assertionsFailed += failures.length;
 

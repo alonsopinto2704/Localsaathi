@@ -1,6 +1,6 @@
 # Phase 015 — Architecture Decision Records
 
-**Status:** In review  
+**Status:** Done (gate passed in phase-020; human sign-off pending)  
 **Objective:** Document architectural decisions, resolve Floot references, define measurable triggers for future enhancements.  
 **Changed paths:** None (evidence-only, no source edits)  
 **Inputs reviewed:** `implementation-plan-320-phases.md`, `tasks/plan.md`, `docs/claude-handoff.md`, `tool/export_floot_data.py`, `backend/supabase/config.toml`, `pubspec.yaml`
@@ -22,7 +22,7 @@ Continue development on Flutter Android. Keep controllers, repository interfaces
 
 **Evidence:**  
 - Existing: `lib/app/controllers/`, `lib/domain/models/`, `lib/features/*/screens.dart`, `lib/data/repositories/` (mock layer)
-- Gradle: `android/build.gradle`, `android/app/build.gradle` (API 36, Gradle 8.9.1 initially underspecified, correctable via upgrade to 8.14+)
+- Gradle: `android/build.gradle`, `android/app/build.gradle` (API 36; repo is already on Gradle 9.3.1 (`gradle-wrapper.properties`) and AGP 9.1.0 (`settings.gradle`), per phase-007)
 - Tests: `test/localsaathi_core_test.dart`, domain + fixture tests
 - Target: `flutter build appbundle --release` must succeed with 16 KB page-size alignment, R8 on, release signing
 
@@ -85,7 +85,7 @@ Schema is Postgres-standard; can be migrated to self-hosted PostgreSQL with RLS 
 ### ADR-003: Static Astro Website (In-Repo, Not Floot/Lovable)
 
 **Context:**  
-An Astro-based static website is planned in `website/` (currently absent). The app already exports data (categories, providers, legal text) via `tool/export_web_data.py` into `showcase/data.js`. A second script, `tool/export_floot_data.py`, was written to export to a Floot project, but the Floot platform was abandoned by the owner (decision: 2026-10-04). The website must mirror the app without creating a competing backend or duplicating logic.
+An Astro-based static website is planned in `website/` (currently absent). The old exporter (`tool/export_web_data.py`) was deleted on 2026-10-07 with the showcase; the website will need a fresh exporter from `lib/data/seed/`.js`. A second script, `tool/export_floot_data.py`, was written to export to a Floot project, but the Floot platform was abandoned by the owner (decision: 2026-10-04). The website must mirror the app without creating a competing backend or duplicating logic.
 
 **Decision:**  
 Build the website as static Astro (ssg, prerendering) in-repo at `website/`. Export directory data (categories, localities, masked providers) from Flutter seed files and legal documents. Generate stable pages for: home, search results (by locality and category), city/locality/service landing pages, provider profiles, and legal pages (privacy, terms, guidelines, grievance). Use app screenshots for hero imagery; no invented testimonials or fake user counts. Keep phone numbers masked (demo data) until late-launch verification. Provider pages must not be permanently prerendered with revocable data (phone, availability, suspension): render them live or with a short, purge-on-revoke cache (target: revocation visible on fresh requests immediately, CDN purge SLA measured in phase 141+); disable static indexing (`indexingEnabled: false` config) until listings are verified non-demo.
@@ -99,7 +99,7 @@ Build the website as static Astro (ssg, prerendering) in-repo at `website/`. Exp
 **Evidence:**  
 - Owner decision: `implementation-plan-320-phases.md` lines 44–45 ("Retire stale Floot-specific analytics assumptions… do not permanently export revocable phone numbers, suspended profiles, or private fields into static pages.") and plan.md line 25 ("website analytics is Floot's built-in, storage-free mode").
 - Stale export: `tool/export_floot_data.py` is written and functional but has no Floot project to upload to (plan.md founder decision to replace Floot with in-repo Astro).
-- Data mirror: `tool/export_web_data.py` reads `lib/data/seed/` and produces `showcase/data.js`; website can use same source.
+- Data mirror: ~~`tool/export_web_data.py` → `showcase/data.js`~~ deleted 2026-10-07 with the showcase; the Astro site (141–160) needs a fresh exporter reading `lib/data/seed/`.
 - Legal sync: `lib/features/legal/legal_documents.dart` + `tool/export_floot_data.py` lines 181–219 show pattern for extracting legal text with placeholders filled.
 
 **Owner:**  
@@ -150,7 +150,7 @@ Workstream AI (Phases 161–200)
 
 **Cost:**  
 - OpenAI or Anthropic API: TO QUOTE at execution. Assume $0.01–0.05 per request (Claude 3 Haiku, 1K context in/out); scale from 10–500 AI requests/day per Phase 016 scenarios.
-- Vercel Edge Function compute: included in serverless tier; negligible.
+- Supabase Edge Function compute (same platform as ADR-002): included in the plan's invocation quota at pilot volume; negligible.
 - Rate-limiting, cost caps, human-review queue: ~4–6 focused hours (Phase 201).
 
 **Reversal path:**  
@@ -167,22 +167,22 @@ If edge function cost exceeds budget, switch to a self-hosted model on a contain
 ### ADR-005: Deterministic Postgres Search First, No Vector DB Until Measured
 
 **Context:**  
-Provider search is currently implemented as in-memory token matching over seed data (`lib/domain/repositories/providers.dart`, `mock_provider_repository.dart`). Backend schema includes `search_vector` column (Phase 021–040 migration), and deterministic search RPCs are written but not yet executed (Phase 061–080). Vector retrieval (pgvector) is not implemented.
+Provider search is currently implemented as in-memory token matching over seed data (`lib/domain/repositories/provider_repository.dart`, `lib/data/repositories/mock_provider_repository.dart`). The backend has no `search_vector`/`tsvector` column: search uses `pg_trgm` trigram GIN indexes (`gin_trgm_ops` on `display_name`, `description`, locality names; `20260101000010_indexes.sql:13-27`) inside the `search_providers` RPC, executed in PGlite (phases 034, 038); the Flutter client does not call it yet (Phases 061–080). Vector retrieval (pgvector) is not implemented.
 
 **Decision:**  
-Prioritize deterministic Postgres full-text search (FTS) with multi-token matching on provider names, trade names, keywords, and localities. Target p95 latency under 800ms at documented test load (estimated 1000 concurrent users, each issuing 5 search queries during a 15-minute session). Measure actual latency in Phase 101–120 search evaluation. Do not add pgvector or an external vector database unless:
+Prioritize deterministic Postgres search (today `pg_trgm` similarity; add FTS only if trigram matching measures short) with multi-token matching on provider names, trade names, keywords, and localities. Target p95 latency under 800ms at documented test load (estimated 1000 concurrent users, each issuing 5 search queries during a 15-minute session). Measure actual latency in Phase 101–120 search evaluation. Do not add pgvector or an external vector database unless:
 1. Deterministic search p95 latency consistently exceeds 800ms under load, AND
 2. Semantic relevance (not just latency) is measured as the limiting factor via user feedback or evaluation metrics.
 
 Queues, caching, and other infrastructure come only when measured needs justify them.
 
 **Alternatives considered:**
-- Elasticsearch: standalone service, operational overhead, cost scaling. Defer until Postgres FTS is proven insufficient.
-- pgvector in Postgres: fair, but requires trigger-based indexing on every profile edit (cost, staleness). First measure FTS performance.
-- Redis cache on search queries: reasonable after FTS baseline; add only if hit rate is predictable.
+- Elasticsearch: standalone service, operational overhead, cost scaling. Defer until Postgres (trigram) search is proven insufficient.
+- pgvector in Postgres: fair, but requires trigger-based indexing on every profile edit (cost, staleness). First measure trigram search performance.
+- Redis cache on search queries: reasonable after a measured search baseline; add only if hit rate is predictable.
 
 **Evidence:**  
-- Current: `backend/supabase/migrations/` (search_vector column, FTS functions, no pgvector extension)
+- Current: `backend/supabase/migrations/20260101000010_indexes.sql` (`pg_trgm` GIN indexes), `search_providers` RPC (latest in `20261006000016_public_projection.sql`); no `tsvector` column, no pgvector extension
 - Target: implementation-plan line 369 ("deterministic search surviving model outages")
 - Measurement plan: Phase 010 (metrics definition), Phase 101–120 (search evaluation with test load)
 - Thresholds: "p95 search > 800ms at documented load" is the explicit reconsider trigger (implementation-plan ADR guidance)
@@ -191,12 +191,12 @@ Queues, caching, and other infrastructure come only when measured needs justify 
 Workstream 3 (Search) + Workstream AI (fallback if semantic relevance becomes a factor)
 
 **Cost:**  
-- Postgres FTS: included in Supabase compute (Phase 016).
+- Postgres (trigram) search: included in Supabase compute (Phase 016).
 - pgvector or Elasticsearch: deferred; estimate $500–2000/month if added (Phase 016 cost model, conditional line).
-- Caching layer (Redis): $50–500/month depending on dataset size; add only if FTS hit ratio is low and not fixable via index tuning.
+- Caching layer (Redis): $50–500/month depending on dataset size; add only if the search hit ratio is low and not fixable via index tuning.
 
 **Reversal path:**  
-If FTS proves insufficient (p95 > 800ms), add pgvector to the same Postgres instance (no external service, immediate reversal). If vector search alone doesn't solve latency, introduce read replicas or a cache layer (Redis), then re-measure. Data in Postgres is not vendor-locked; search strategy is isolated to backend queries.
+If trigram search proves insufficient (p95 > 800ms), add pgvector to the same Postgres instance (no external service, immediate reversal). If vector search alone doesn't solve latency, introduce read replicas or a cache layer (Redis), then re-measure. Data in Postgres is not vendor-locked; search strategy is isolated to backend queries.
 
 **Reconsider when:**  
 - Measured p95 search latency > 800ms at documented load (Phase 101–120 evaluation).
@@ -211,10 +211,10 @@ All Floot references have been located and are actionable:
 
 | File | Line(s) | Reference | Disposition | Next Action |
 |---|---|---|---|---|
-| `tool/export_floot_data.py` | 1–225 | Script exports directory data to Floot project format (`build/floot/directoryData.tsx`, etc.) | **Retire** — Floot platform abandoned per owner decision (2026-10-04); no active project to upload to | Delete file after confirming Astro website exports the same data (Phase 005). Archive in separate commit with message "Retire Floot export tool; Astro website replaces it." |
+| `tool/export_floot_data.py` | 1–225 | Script exports directory data to Floot project format (`build/floot/directoryData.tsx`, etc.) | **Retire** — Floot platform abandoned per owner decision (2026-10-04); no active project to upload to | Delete file after confirming Astro website exports the same data (Phases 141–160). Archive in separate commit with message "Retire Floot export tool; Astro website replaces it." |
 | `tasks/plan.md` | 24 | Analytics: "website analytics is Floot's built-in, storage-free mode" | **Replace** — Floot platform unavailable; Astro website will use Vercel Analytics (free tier) or Plausible | Update plan.md line 24 to read: "No new tracking SDKs. Crashes and ANRs come from Play Console Android vitals; website analytics is [chosen analytics provider, e.g. Vercel built-in]." |
 | `tasks/plan.md` | 25 | Website scope: "No invented facts… no team names, addresses" | **Keep** — applies to both Floot and Astro; reflects integrity principle | No change required. |
-| `tasks/implementation-plan-320-phases.md` | 44 | "Retire stale Floot-specific analytics assumptions" | **Action taken via this ADR** — Floot references catalogued, Astro path confirmed | Mark Phase 005 acceptance with evidence: Floot references resolved, Astro website asset export matches `tool/export_floot_data.py` capability. |
+| `tasks/implementation-plan-320-phases.md` | 44 | "Retire stale Floot-specific analytics assumptions" | **Action taken via this ADR** — Floot references catalogued, Astro path confirmed | Mark Phases 141–160 acceptance with evidence: Floot references resolved, Astro website asset export matches `tool/export_floot_data.py` capability. |
 
 **Summary:** Floot export tool is dead code; website analytics placeholder must be filled with a real provider. Both are low-complexity cleanup actions that do not block core launch.
 
@@ -224,8 +224,8 @@ All Floot references have been located and are actionable:
 
 1. **AI Model Selection (Phase 161):** OpenAI vs. Anthropic vs. other? Cost and latency estimates depend on this. Placeholder in Phase 016 cost model pending decision.
 2. **SMS Provider (Phase 041):** Firebase Phone Auth vs. MSG91 vs. Gupshup vs. other? DLT registration in India required. Cost varies widely.
-3. **Website Hosting & Analytics (Phase 005, 141):** Vercel (free tier or Pro) vs. Netlify vs. other? Vercel assumed for deployment cost model in Phase 016.
-4. **Real-time vs. Static Listings (Phase 005):** Website stays fully static (rebuilt 1x/day or on-demand) or introduces a lightweight BFF for real-time provider availability? Affects architecture and cost.
+3. **Website Hosting & Analytics (Phases 141–160):** Vercel (free tier or Pro) vs. Netlify vs. other? Vercel assumed for deployment cost model in Phase 016.
+4. **Real-time vs. Static Listings (Phases 141–160):** Website stays fully static (rebuilt 1x/day or on-demand) or introduces a lightweight BFF for real-time provider availability? Affects architecture and cost.
 
 ---
 
@@ -240,7 +240,7 @@ All Floot references have been located and are actionable:
 ## Chief-engineer review (2026-10-06)
 
 - Replaced the proposed 24-hour provider-card cache: it would keep suspended/withdrawn phone numbers public for up to a day, contradicting the plan's architecture section (short, revocable caching only).
-- `tool/export_floot_data.py` disposition "delete after Astro export confirmed" is a proposal — do not delete without the owner's go-ahead.
+- `tool/export_floot_data.py`: **deleted 2026-10-07 with the owner's go-ahead** (Floot abandoned; it only read the deleted showcase data).
 - Status: accepted for phase 020.
 
 ## Independent audit (2026-10-06)

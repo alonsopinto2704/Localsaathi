@@ -59,6 +59,6 @@ Hosted Supabase `supabase db push` against a real prior-version project (phase 0
 Forward repair only (per plan). The rehearsal shows each new file applies atomically. To back out the API change for a client, keep these migrations and add a compatibility RPC rather than re-granting table writes.
 
 ## Re-run after code-review fixes and the phase 038 index (2026-10-07)
-`node backend/scripts/rehearse-migrations.mjs --providers 2000` → `Rehearsal: 17/17 checks passed`. The new check is `apply 20261006000020_measured_indexes.sql`.
+`node backend/scripts/rehearse-migrations.mjs --providers 2000` → `Rehearsal: 17/17 checks passed` (2026-10-06; after migrations 0021–0022 the same command reports **19/19**, re-run 2026-10-07). The new check is `apply 20261006000020_measured_indexes.sql`.
 
 The harness first picked its injected-failure "victim" by position (third from last). Adding migration 20 shifted that pick to `…18`, while the assertion still looked for `set_listing_status`, which `…17` defines. The victim is now chosen by name (`owner_writes`).

@@ -26,7 +26,7 @@ The owner JSON still returns the profile, with `isPubliclyListed: false`, so the
   - a coming_soon city and an un-approved category each hide the listing from all six paths;
   - the owner still sees the listing, with `isPubliclyListed=false`;
   - audit rows are written.
-- Suite: `Tests: 14/14 files passed, 149/149 assertions passed. PASS`.
+- Suite: `Tests: 14/14 files passed, 151/151 assertions passed. PASS`.
 
 ## Rollback
 Restore only the intended configuration, through the same audited RPCs.

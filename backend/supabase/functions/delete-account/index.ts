@@ -48,15 +48,27 @@ Deno.serve(async (req: Request) => {
   // Phase 035: no SQL cascade removes Storage objects. Remove the caller's
   // photos and credential evidence BEFORE the auth user, so a failure here
   // leaves the account intact and the user can retry.
-  // Objects live flat at `<uid>/<file>` (add_provider_photo enforces it), so
-  // only file entries (id != null) are removed; folder placeholders are
-  // ignored. Bounded passes: if a pass removes nothing new, stop rather than
-  // loop until the runtime times out.
-  for (const bucket of ["provider-photos", "credential-evidence"]) {
+  // Objects live flat at `<folder>/<file>`: photos under the listing's
+  // profile id (since migration 0022; legacy ones under the user id), credential
+  // evidence under the user id. Only file entries (id != null) are removed;
+  // folder placeholders are ignored. Bounded passes: if a pass removes nothing
+  // new, stop rather than loop until the runtime times out.
+  const { data: profile, error: profileError } = await adminClient
+    .from("provider_profiles").select("id").eq("user_id", userId).maybeSingle();
+  if (profileError) {
+    console.error("delete-account: profile lookup failed", profileError.message);
+    return new Response(JSON.stringify({ error: "delete_failed" }), { status: 500 });
+  }
+  const targets: Array<[string, string]> = [
+    ["provider-photos", userId],
+    ["credential-evidence", userId],
+    ...(profile ? [["provider-photos", profile.id] as [string, string]] : []),
+  ];
+  for (const [bucket, folder] of targets) {
     for (let pass = 0; pass < 50; pass++) {
       const { data: entries, error: listError } = await adminClient.storage
         .from(bucket)
-        .list(userId, { limit: 100 });
+        .list(folder, { limit: 100 });
       if (listError) {
         console.error("delete-account: list failed", bucket, listError.message);
         return new Response(JSON.stringify({ error: "delete_failed" }), { status: 500 });
@@ -65,7 +77,7 @@ Deno.serve(async (req: Request) => {
       if (files.length === 0) break;
       const { data: removed, error: removeError } = await adminClient.storage
         .from(bucket)
-        .remove(files.map((f) => `${userId}/${f.name}`));
+        .remove(files.map((f) => `${folder}/${f.name}`));
       if (removeError || !removed || removed.length === 0) {
         console.error("delete-account: remove failed", bucket, removeError?.message ?? "nothing removed");
         return new Response(JSON.stringify({ error: "delete_failed" }), { status: 500 });
@@ -81,7 +93,12 @@ Deno.serve(async (req: Request) => {
     return new Response(JSON.stringify({ error: "delete_failed" }), { status: 500 });
   }
   // Objects were already removed above; close the queued cleanup rows.
-  await adminClient.rpc("mark_storage_cleaned", { p_user_id: userId });
+  // A failure here only leaves queue rows for the lifecycle job to retry.
+  const { error: markError } = await adminClient.rpc("mark_storage_cleaned", {
+    p_user_id: userId,
+    p_profile_id: profile?.id ?? null,
+  });
+  if (markError) console.error("delete-account: mark_storage_cleaned failed", markError.message);
 
   return new Response(JSON.stringify({ ok: true }), {
     status: 200,

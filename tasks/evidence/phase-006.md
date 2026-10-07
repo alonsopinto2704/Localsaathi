@@ -29,7 +29,11 @@ npx supabase test db                                 # the same 5 pgTAP suites o
 ```
 Parity diff to record on PGlite and the stack: `select version(); show timezone; select extname, extversion from pg_extension;`, `has_table_privilege` for anon/authenticated on public tables, and `auth.users` columns versus `scripts/supabase-stub.sql`.
 
-## The 4 HTTP checks (script plan)
+## The 4 HTTP checks — executable script
+**Superseded by `backend/scripts/http-authz-pack.mjs` (Phase 039), which is the runnable version of this plan** (`--self-test` passes offline). Once the stack above is up, export `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `OWNER_JWT`, `OTHER_JWT`, `ADMIN_JWT`, `OWNER_PROFILE_ID`, `HIDDEN_PROFILE_ID`, `OWNER_USER_ID` (from `supabase status -o env` and two GoTrue sign-ins), then run `node backend/scripts/http-authz-pack.mjs`. It refuses to run with a service-role key and covers anon read/denial, direct-PATCH denial (writes go through RPCs since migration 0013), cross-owner denial and private-object (credential-evidence) denial. One check this plan has and the pack does not: a positive owner Storage upload to `provider-photos/<A>/`.
+
+The original prose plan is kept below for history; where it says owners may `PATCH provider_profiles` directly, that predates migration `20261006000013_privilege_hardening.sql` (direct table writes are now denied).
+
 Create two users via the GoTrue admin API (SERVICE_ROLE_KEY, `phone_confirm: true`, synthetic phones `+919000000101` and `+919000000102`), sign each in to get JWTs `$A` and `$B`. Then:
 
 1. **Anonymous read.** `curl "$API_URL/rest/v1/rpc/search_providers" -H "apikey: $ANON_KEY" -H 'content-type: application/json' -d '{"p_city_id":"<seeded active city>","p_locality_id":"<seeded locality>"}'` -> 200, items present, no `moderation_status`/`suspension_reason`/credential fields in the JSON. `GET /rest/v1/app_admins` and `/rest/v1/consent_records` as anon -> 401/403 or `[]`.
@@ -62,4 +66,7 @@ Real-platform authorization (JWT handling, PostgREST grants, Storage) is unverif
 Nothing changed. After a future run: `npx supabase stop --no-backup`.
 
 ## Next integration action
-User installs Docker Desktop; integration engineer runs the sequence, records outputs here, and moves status to In review.
+User installs Docker Desktop (or connects a disposable cloud project); integration engineer runs the boot sequence plus `node backend/scripts/http-authz-pack.mjs`, records outputs here and in phase-039.md, and moves status to In review.
+
+## 2026-10-07 audit follow-up
+See `tasks/evidence/audit-2026-10-07-followup.md`. Storage policies now have a pgTAP suite (`0016_storage_policies.test.sql`); platform serving behaviour still needs the HTTP pack.

@@ -50,6 +50,7 @@ class LocalSaathiApp extends StatelessWidget {
             auth: dependencies.auth,
             providers: dependencies.providers,
             consents: dependencies.consents,
+            drafts: dependencies.drafts,
           )..restore(),
         ),
       ],

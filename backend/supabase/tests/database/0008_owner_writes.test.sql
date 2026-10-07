@@ -2,6 +2,7 @@
 -- Phone range +91900000080x.
 begin;
 select plan(25);
+select tests.set_flag('media_intake', true);
 select tests.ensure_reference_data();
 
 create temporary table fx (key text primary key, value text);
@@ -161,11 +162,11 @@ select throws_like(
   '%not_owner:%', 'another owner cannot delete_listing');
 select throws_like(
   format($sql$ select public.add_provider_photo(%L::uuid, %L) $sql$, (select value from fx where key = 'pid'),
-         (select value from fx where key = 'other') || '/x.jpg'),
+         (select value from fx where key = 'pid') || '/x.jpg'),
   '%not_owner:%', 'another owner cannot add_provider_photo');
 reset role;
 
--- Photo path must sit in the caller's own folder.
+-- Photo path must sit in the listing's own folder (keyed by profile id since 0022).
 select tests.authenticate_as((select value::uuid from fx where key = 'owner'));
 select throws_like(
   format($sql$ select public.add_provider_photo(%L::uuid, %L) $sql$, (select value from fx where key = 'pid'),

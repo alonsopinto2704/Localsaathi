@@ -94,6 +94,7 @@ class CategorySeed {
     ),
     ServiceCategory(
       id: 'masonry',
+      isApprovedForLaunch: false, // wave 2 / healthcare (phase-009)
       groupId: 'home-repairs',
       name: 'Mason',
       iconKey: CategoryIconKeys.masonry,
@@ -102,6 +103,7 @@ class CategorySeed {
     ),
     ServiceCategory(
       id: 'welding-fabrication',
+      isApprovedForLaunch: false, // wave 2 / healthcare (phase-009)
       groupId: 'home-repairs',
       name: 'Welding and fabrication',
       iconKey: CategoryIconKeys.masonry,
@@ -127,6 +129,7 @@ class CategorySeed {
     ),
     ServiceCategory(
       id: 'locksmith',
+      isApprovedForLaunch: false, // wave 2 / healthcare (phase-009)
       groupId: 'home-repairs',
       name: 'Locksmith and key maker',
       iconKey: CategoryIconKeys.lock,
@@ -135,6 +138,7 @@ class CategorySeed {
     ),
     ServiceCategory(
       id: 'tv-repair',
+      isApprovedForLaunch: false, // wave 2 / healthcare (phase-009)
       groupId: 'home-repairs',
       name: 'TV and electronics repair',
       iconKey: CategoryIconKeys.appliance,
@@ -143,6 +147,7 @@ class CategorySeed {
     ),
     ServiceCategory(
       id: 'tiles-marble',
+      isApprovedForLaunch: false, // wave 2 / healthcare (phase-009)
       groupId: 'home-repairs',
       name: 'Tiles and marble work',
       iconKey: CategoryIconKeys.masonry,
@@ -151,6 +156,7 @@ class CategorySeed {
     ),
     ServiceCategory(
       id: 'waterproofing',
+      isApprovedForLaunch: false, // wave 2 / healthcare (phase-009)
       groupId: 'home-repairs',
       name: 'Waterproofing',
       iconKey: CategoryIconKeys.masonry,
@@ -159,6 +165,7 @@ class CategorySeed {
     ),
     ServiceCategory(
       id: 'interior-work',
+      isApprovedForLaunch: false, // wave 2 / healthcare (phase-009)
       groupId: 'home-repairs',
       name: 'Interior and false ceiling',
       iconKey: CategoryIconKeys.masonry,
@@ -196,6 +203,7 @@ class CategorySeed {
     ),
     ServiceCategory(
       id: 'sofa-carpet-cleaning',
+      isApprovedForLaunch: false, // wave 2 / healthcare (phase-009)
       groupId: 'home-services',
       name: 'Sofa and carpet cleaning',
       iconKey: CategoryIconKeys.cleaning,
@@ -214,6 +222,7 @@ class CategorySeed {
     // -------------------------------------------------------- daily workers
     ServiceCategory(
       id: 'daily-worker',
+      isApprovedForLaunch: false, // wave 2 / healthcare (phase-009)
       groupId: 'daily-workers',
       name: 'General helper',
       iconKey: CategoryIconKeys.labour,
@@ -223,6 +232,7 @@ class CategorySeed {
     ),
     ServiceCategory(
       id: 'construction-labourer',
+      isApprovedForLaunch: false, // wave 2 / healthcare (phase-009)
       groupId: 'daily-workers',
       name: 'Construction labourer',
       iconKey: CategoryIconKeys.labour,
@@ -231,6 +241,7 @@ class CategorySeed {
     ),
     ServiceCategory(
       id: 'loading-unloading',
+      isApprovedForLaunch: false, // wave 2 / healthcare (phase-009)
       groupId: 'daily-workers',
       name: 'Loading and unloading worker',
       iconKey: CategoryIconKeys.labour,
@@ -239,6 +250,7 @@ class CategorySeed {
     ),
     ServiceCategory(
       id: 'gardening',
+      isApprovedForLaunch: false, // wave 2 / healthcare (phase-009)
       groupId: 'daily-workers',
       name: 'Gardening',
       iconKey: CategoryIconKeys.gardening,
@@ -247,6 +259,7 @@ class CategorySeed {
     ),
     ServiceCategory(
       id: 'security-guard',
+      isApprovedForLaunch: false, // wave 2 / healthcare (phase-009)
       groupId: 'daily-workers',
       name: 'Security guard',
       iconKey: CategoryIconKeys.security,
@@ -266,6 +279,7 @@ class CategorySeed {
     ),
     ServiceCategory(
       id: 'car-mechanic',
+      isApprovedForLaunch: false, // wave 2 / healthcare (phase-009)
       groupId: 'vehicle-services',
       name: 'Car mechanic',
       iconKey: CategoryIconKeys.mechanic,
@@ -274,6 +288,7 @@ class CategorySeed {
     ),
     ServiceCategory(
       id: 'puncture-repair',
+      isApprovedForLaunch: false, // wave 2 / healthcare (phase-009)
       groupId: 'vehicle-services',
       name: 'Puncture repair',
       iconKey: CategoryIconKeys.mechanic,
@@ -282,6 +297,7 @@ class CategorySeed {
     ),
     ServiceCategory(
       id: 'towing',
+      isApprovedForLaunch: false, // wave 2 / healthcare (phase-009)
       groupId: 'vehicle-services',
       name: 'Towing service',
       iconKey: CategoryIconKeys.towing,
@@ -290,6 +306,7 @@ class CategorySeed {
     ),
     ServiceCategory(
       id: 'driver',
+      isApprovedForLaunch: false, // wave 2 / healthcare (phase-009)
       groupId: 'vehicle-services',
       name: 'Driver',
       iconKey: CategoryIconKeys.driver,
@@ -300,6 +317,7 @@ class CategorySeed {
     // ----------------------------------------------------------- healthcare
     ServiceCategory(
       id: 'general-physician',
+      isApprovedForLaunch: false, // wave 2 / healthcare (phase-009)
       groupId: 'healthcare',
       name: 'General physician',
       iconKey: CategoryIconKeys.medical,
@@ -310,6 +328,7 @@ class CategorySeed {
     ),
     ServiceCategory(
       id: 'dentist',
+      isApprovedForLaunch: false, // wave 2 / healthcare (phase-009)
       groupId: 'healthcare',
       name: 'Dentist',
       iconKey: CategoryIconKeys.dental,
@@ -320,6 +339,7 @@ class CategorySeed {
     ),
     ServiceCategory(
       id: 'paediatrician',
+      isApprovedForLaunch: false, // wave 2 / healthcare (phase-009)
       groupId: 'healthcare',
       name: 'Paediatrician',
       iconKey: CategoryIconKeys.paediatric,
@@ -330,6 +350,7 @@ class CategorySeed {
     ),
     ServiceCategory(
       id: 'physiotherapist',
+      isApprovedForLaunch: false, // wave 2 / healthcare (phase-009)
       groupId: 'healthcare',
       name: 'Physiotherapist',
       iconKey: CategoryIconKeys.physio,
@@ -339,6 +360,7 @@ class CategorySeed {
     ),
     ServiceCategory(
       id: 'diagnostic-centre',
+      isApprovedForLaunch: false, // wave 2 / healthcare (phase-009)
       groupId: 'healthcare',
       name: 'Diagnostic centre',
       iconKey: CategoryIconKeys.diagnostics,
@@ -348,6 +370,7 @@ class CategorySeed {
     ),
     ServiceCategory(
       id: 'home-nursing',
+      isApprovedForLaunch: false, // wave 2 / healthcare (phase-009)
       groupId: 'healthcare',
       name: 'Home nursing and attendant',
       iconKey: CategoryIconKeys.medical,
@@ -357,6 +380,7 @@ class CategorySeed {
     ),
     ServiceCategory(
       id: 'veterinary',
+      isApprovedForLaunch: false, // wave 2 / healthcare (phase-009)
       groupId: 'healthcare',
       name: 'Veterinary doctor',
       iconKey: CategoryIconKeys.medical,
@@ -377,6 +401,7 @@ class CategorySeed {
     ),
     ServiceCategory(
       id: 'network-technician',
+      isApprovedForLaunch: false, // wave 2 / healthcare (phase-009)
       groupId: 'other-services',
       name: 'Network technician',
       iconKey: CategoryIconKeys.network,
@@ -386,6 +411,7 @@ class CategorySeed {
     ),
     ServiceCategory(
       id: 'tutor',
+      isApprovedForLaunch: false, // wave 2 / healthcare (phase-009)
       groupId: 'other-services',
       name: 'Tutor',
       iconKey: CategoryIconKeys.tutor,
@@ -395,6 +421,7 @@ class CategorySeed {
     ),
     ServiceCategory(
       id: 'packers-movers',
+      isApprovedForLaunch: false, // wave 2 / healthcare (phase-009)
       groupId: 'other-services',
       name: 'Packers and movers',
       iconKey: CategoryIconKeys.moving,
@@ -403,6 +430,7 @@ class CategorySeed {
     ),
     ServiceCategory(
       id: 'it-support',
+      isApprovedForLaunch: false, // wave 2 / healthcare (phase-009)
       groupId: 'other-services',
       name: 'Internet and WiFi setup',
       iconKey: CategoryIconKeys.computer,
@@ -419,6 +447,7 @@ class CategorySeed {
     ),
     ServiceCategory(
       id: 'beauty-at-home',
+      isApprovedForLaunch: false, // wave 2 / healthcare (phase-009)
       groupId: 'other-services',
       name: 'Beauty services at home',
       iconKey: CategoryIconKeys.beauty,
@@ -435,6 +464,7 @@ class CategorySeed {
     ),
     ServiceCategory(
       id: 'event-help',
+      isApprovedForLaunch: false, // wave 2 / healthcare (phase-009)
       groupId: 'other-services',
       name: 'Event and catering help',
       iconKey: CategoryIconKeys.events,
@@ -443,6 +473,7 @@ class CategorySeed {
     ),
     ServiceCategory(
       id: 'other-services',
+      isApprovedForLaunch: false, // wave 2 / healthcare (phase-009)
       groupId: 'other-services',
       name: 'Other local services',
       iconKey: CategoryIconKeys.other,

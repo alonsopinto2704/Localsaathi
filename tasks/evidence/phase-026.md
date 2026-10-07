@@ -31,7 +31,7 @@ Normalize phones to E.164 and keep identity unique under concurrency. Conflicts 
   - a second registration returns `conflict`;
   - the owner JSON shows `verification.phone = approved`.
 - Rehearsal (phase 037): 2,000 old-format phones are normalized during the upgrade.
-- Suite: `Tests: 14/14 files passed, 149/149 assertions passed. PASS`.
+- Suite: `Tests: 14/14 files passed, 151/151 assertions passed. PASS`.
 
 ## Not verified
 Truly simultaneous sessions, because PGlite uses a single connection. Correctness rests on the UNIQUE constraints, which Postgres enforces across sessions. Re-run two parallel `register_profile` HTTP calls on the disposable stack (phase 006).

@@ -37,7 +37,7 @@ Every data category must have a defined deletion, pseudonymization, retention or
   - two cleanup prefixes are queued;
   - the audit row is written;
   - the purge removes a 181-day-old orphan report and clears a 91-day-old reporter phone.
-- Suite: `Tests: 14/14 files passed, 149/149 assertions passed. PASS`.
+- Suite: `Tests: 14/14 files passed, 151/151 assertions passed. PASS`.
 
 ## Not verified
 - **The Edge Function is unexecuted.** It needs a deploy and run against a disposable project (depends on phase 006). It assumes the flat `<uid>/<file>` layout, so nested folders are not listed.

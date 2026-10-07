@@ -1,6 +1,6 @@
 # Phase 008 — User research brief
 
-**Status:** In review
+**Status:** Done (gate passed in phase-020; human sign-off pending)
 
 **Objective:** Prepare interviews for customers, independent providers, older users, people arranging home visits, and clinics; define consent, retention, participant diversity, and research questions mapped to product decisions.
 
@@ -67,6 +67,25 @@ None (research planning document).
 | Text size: is this readable on your phone? | Older users | 121 (accessibility) | Launch minimum font sizes, high-contrast option |
 | Do you prefer Hindi, Marathi, or English? Any mixing? | Older users | 121 (multilingual) | Language retention across sessions, script preferences |
 
+### Primary hypothesis: do free incumbents fail users? (Idea Council `FIX FIRST`, `council/verdicts.md`)
+
+The council made this the **first** thing Phase 008 must test; the build is not justified until it has one real data point. Run before the other interviews.
+
+**Desk test (10 minutes, no participants):** search Google Maps and JustDial for "plumber Andheri West" (repeat for electrician, AC repair). Call/WhatsApp 5 listed numbers per search. Record per number: answered / stale (wrong person, disconnected) / unreachable / upsell-gated (paid-lead or "premium" gate).
+
+**Interview questions:**
+
+| Question | Segment | Pass signal |
+|----------|---------|-------------|
+| Last time you needed a plumber/electrician, where did you look first (Google Maps, JustDial, WhatsApp/society group, neighbour)? Did it work? | Customers | Names a concrete failure, not "it was fine" |
+| Have you called a listed number that was wrong, switched off, or someone else's? How many times this year? | Customers | ≥1 recent stale-number story |
+| After searching or enquiring on JustDial/similar, did you get calls from businesses you never contacted? | Customers | Lead-selling spam reported |
+| What would make you try a new app instead of asking your society WhatsApp group? | Customers, older users | A reason other than "it's new" |
+| Are you listed on JustDial / Google? Do you pay? Are the leads real or spam? | Providers | Pays for poor leads, or is listed with stale details |
+| Would you list for free on a local directory that never sells your number as a lead? Would you update your availability weekly? | Providers | Yes to both (tests the council's "providers will refresh availability") |
+
+**Decision rule (from the council):** flip to BUILD only if **≥2 of 5** incumbent numbers are stale/unreachable, **or ≥3 of 5** providers want a free listing outside JustDial. Otherwise record the result here and stop before Phase 009 widens scope.
+
 ## Residual uncertainty / decisions needing the owner
 
 1. **Recording consent**: Are audio recordings needed for later review? If yes, require explicit opt-in and host on secure server (not transcribed to third party without consent).
@@ -76,8 +95,12 @@ None (research planning document).
 
 ## Next integration action
 
-1. Finalize consent script in all three languages with legal/compliance review.
-2. Identify 12–14 recruit participants across segments, confirm interview schedule.
+1. Run the incumbent desk test above and record the 5-number tallies here.
+2. Finalize consent script in all three languages with legal/compliance review.
+3. Identify 12–14 recruit participants across segments, confirm interview schedule.
+4. Conduct interviews (2–3 weeks).
+5. Synthesize findings into a summary document mapping key friction points to launch gates (e.g., "all 6 customer interviews said availability freshness was critical" → measure phase 101 discovery accuracy).
+6. Record no phase-009 or phase-010 decisions until interview synthesis is shared; interview findings may shift launch category selection and metric thresholds.
 
 ## Independent audit (2026-10-06)
 
@@ -90,9 +113,6 @@ None (research planning document).
 | Consent script has 90-day retention | Confirmed | Text states "After 90 days, all identifiable notes will be deleted" |
 
 Research planning document is well-structured. No executable claims to verify; content is reasonable and defensible.
-3. Conduct interviews (2–3 weeks).
-4. Synthesize findings into a summary document mapping key friction points to launch gates (e.g., "all 6 customer interviews said availability freshness was critical" → measure phase 101 discovery accuracy).
-5. Record no phase-009 or phase-010 decisions until interview synthesis is shared; interview findings may shift launch category selection and metric thresholds.
 
 ---
 

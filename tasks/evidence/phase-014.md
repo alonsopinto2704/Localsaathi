@@ -1,6 +1,6 @@
 # Phase 014 — API contract reconciliation
 
-**Status:** In review
+**Status:** Done (gate passed in phase-020; human sign-off pending)
 
 ## Objective
 
@@ -17,7 +17,7 @@ Compare the Dart repository interfaces and model JSON codecs with the SQL respon
 ```
 node -e "const fs=require('fs');const d='docs/contracts/fixtures';for(const f of fs.readdirSync(d)){if(!f.endsWith('.json'))continue;JSON.parse(fs.readFileSync(d+'/'+f,'utf8'));console.log('OK '+f)}"
 ```
-Result: 7 of 7 files parsed (deletion, error-codes, profile-edit, public-profile, registration, report, search). Parsing proves syntax only; fixtures were not yet replayed against a database or Dart codecs (no stack or Flutter run in this task). Dart analysis/tests were not run (plan line 30 records `flutter test` hanging in this environment).
+Result (first pass; later superseded: the fixtures are now replayed by `test/contract_fixtures_test.dart`, see Follow-up): 7 of 7 files parsed (deletion, error-codes, profile-edit, public-profile, registration, report, search). Parsing proves syntax only; fixtures were not yet replayed against a database or Dart codecs (no stack or Flutter run in this task). Dart analysis/tests were not run (plan line 30 records `flutter test` hanging in this environment).
 
 Sources read: `lib/domain/models/{provider,account,moderation,location,service_category,enums}.dart`, `lib/domain/repositories/*.dart`, migrations 0002-0012, `docs/backend-contract.md`, `backend/supabase/functions/delete-account/index.ts`, `backend/supabase/config.toml`. Line numbers are from `cat -n` / `grep -n` at review time. There is no Supabase-backed Dart repository yet (`lib/data/` holds mocks only), so "Dart" below means the model codecs and interface signatures a live adapter must satisfy.
 
@@ -121,3 +121,8 @@ Method: every Dart and SQL citation opened; SQL behaviour executed in PGlite via
 | Compatible-by-reading list (key names, search envelope, `moderationStatus` ignored, 5-photo limit = `freePhotoLimit`) | `0004:223` [audit-corrected, was :313]; `app_config.dart:54` | Confirmed | `provider.dart` has no `moderationStatus` reference; `0004:223 >= 5` and `app_config.dart:54 freePhotoLimit = 5`. |
 | 13 stable error codes, 7 fixture files, all JSON parses | `docs/contracts/fixtures/*.json` | Confirmed | `node` parse: 7 files OK; `error-codes.json` has 13 codes; ids `mh-mumbai-andheri-west`, `mh-mumbai-powai`, `dentist`, `plumbing`, `electrical` exist in `seed.sql`; phones `+9198xxxx0000` pattern. |
 | "Fixtures were not replayed against a database or Dart codecs" | Residual | Understated | A DB replay is cheap: PGlite harness executes all SQL claims (done above for #2, #5, #7, #9, #11-#14). Dart codec replay still not done. |
+
+## Follow-up (2026-10-07): fixtures replayed by a Dart test, all at v2
+- **Fixture version split resolved.** `search`, `public-profile`, `registration`, `profile-edit`, `report`, `deletion` re-baselined to `fixtureVersion: 2` (migrations through `20261006000021`), matching `error-codes.json`. Main changes: registration now carries `verification: {phone: approved}` (#5 fixed by 0017); report goes through `rpc submit_report` returning a receipt, with `not_found`/`rate_limited` implemented (0018); `deleteListing` is `rpc delete_listing` raising `not_owner` (0017); invalid availability raises `validation_failed` (0017); public `mapLocation` is rounded to ~1 km and `phoneE164` is null without consent (0016). Fixtures are still hand-written (`synthetic: true`), not captured from a live PostgREST.
+- **Client replay test:** `test/contract_fixtures_test.dart` → **+6 ~2**. Decodes every profile-shaped success body (search items, public-profile, registration, profile-edit) with `ProviderProfile.fromJson`, checks registration is phone-verified, and checks every normalized error code in the six fixtures exists in `error-codes.json` and maps to a real `RepositoryErrorCode`. Skipped with reasons (known defects, owner phases 061–080): #4 `ProviderPhoto.fromJson` drops `remoteUrl`; #1 snake_case enum decoding.
+- Backend side: the same files are not yet replayed by pgTAP (only `working-hours.json` is, via `verify-db.mjs`); the HTTP pack (Phase 039) is the backend counterpart once a stack exists.

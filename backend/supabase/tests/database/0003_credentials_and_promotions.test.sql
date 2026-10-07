@@ -9,6 +9,7 @@ insert into fx select 'a', tests.create_published_provider(
   (select value::uuid from fx where key = 'owner'), '+919000000021', 'Credentialed Provider'
 )::text;
 
+select tests.set_flag('credential_intake', true);
 select tests.authenticate_as((select value::uuid from fx where key = 'owner'));
 
 -- A provider claiming a credential cannot even send a status: since 0013

@@ -36,4 +36,4 @@ Every change appends a `consent_records` row with `granted`, `wording_version` a
   - a consent row is written with `withdrawn_at`;
   - `get_public_profile` returns null;
   - enabling WhatsApp without phone consent returns `consent_required`.
-- Suite: `Tests: 14/14 files passed, 149/149 assertions passed. PASS`.
+- Suite: `Tests: 14/14 files passed, 151/151 assertions passed. PASS`.

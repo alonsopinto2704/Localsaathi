@@ -27,7 +27,7 @@ Further checks:
 ## Verification
 - `0006` asserts that every definer function's `proconfig` contains `search_path=""`.
 - Owner, other-owner and admin denials are covered in suites `0008`–`0010` and `0013`.
-- Suite: `Tests: 14/14 files passed, 149/149 assertions passed. PASS`.
+- Suite: `Tests: 14/14 files passed, 151/151 assertions passed. PASS`.
 
 ## Rollback
 Disable an affected RPC by revoking its EXECUTE grant until it is verified.

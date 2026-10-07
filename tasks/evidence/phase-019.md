@@ -1,6 +1,6 @@
 # Phase 019 — Capacity and risk schedule
 
-**Status:** In review
+**Status:** Done (gate passed in phase-020; human sign-off pending)
 
 ## Objective
 Estimate total human engineering hours across all 320 phases, verify against plan statement, publish staffed 12-week and solo projection options, identify smallest safe release slice (core directory without AI), define owners and cut lines, create external-wait schedule.
@@ -94,7 +94,7 @@ TOTAL BASE: 940–1,880 | WITH 25% CONTINGENCY: 1,175–2,350
 
 ## Solo developer schedule (30 h/week, realistic)
 
-**Core-release slice (Workstreams 1–8 + required WS13–15):** 23–46 weeks at 30 h/week = **5–11 months** (with 25% contingency: 691–1,382 hours).
+**Core-release slice (Workstreams 1–8 + required WS13–15):** 601–1,202 base hours; with 25% contingency **751–1,503 hours** = 25–50 weeks at 30 h/week (**~6–12 months**).
 
 **Realistic solo timeline with sequential external waits:**
 - Weeks 1–2: Baseline, accounts, SMS registration submit (parallel)
@@ -153,24 +153,24 @@ TOTAL BASE: 940–1,880 | WITH 25% CONTINGENCY: 1,175–2,350
 | WS7 (Multilingual) | 121–140 | 40–100 | IN |
 | WS8 (Website) | 141–160 | 60–120 | IN |
 | WS9–12 (AI, experiments) | 161–240 | 320–640 | DEFERRED |
-| **WS13 partial** | 241–260 | 18–36 (IN); 36–72 (DEFERRED) | Mixed |
-| **WS14 partial** | 261–280 | 15–30 (IN); 45–90 (DEFERRED) | Mixed |
-| **WS15 (Deploy, launch)** | 281–300 | 60–120 | IN |
+| **WS13 partial** | 241–260 | 39–78 (IN, 13 phases) | Mixed |
+| **WS14 partial** | 261–280 | 45–90 (IN, 15 phases) | Mixed |
+| **WS15 (Deploy, launch)** | 281–300 | 57–114 (IN, 19 phases; 298 deferred) | IN |
 
 **WS13 (Admin, privacy, moderation, commercial) breakdown:**
-- **IN:** 241 (admin foundation), 243 (moderation), 244 (report handling), 248 (legal), 250 (deletion), 254 (support) = 18–36 hours
-- **DEFERRED:** 245 (healthcare), 246 (appeals), 247 (processor reg), 249 (export), 251–253 (retention/policy/notification), 255–259 (commercial/payment) = 36–72 hours
+- **IN:** 241, 242 (role matrix), 243, 244, 247 (processor register), 248, 249 (data access), 250, 251 (retention), 252, 253 (breach notification), 254, 260 (gate) = 39–78 hours
+- **DEFERRED:** 245 (healthcare, off by flag), 246 (appeals handled manually by support), 255–259 (notifications/commercial; payments off)
 
 **WS14 (DevSecOps, reliability) breakdown:**
-- **IN:** 261 (version control), 262 (secrets), 273 (backups), 274 (restore drill), 276 (incident playbook) = 15–30 hours
-- **DEFERRED:** 263–272 (CI, testing, scaling), 275 (dependency failure), 277–279 (verification, rehearsal, cost) = 45–90 hours
+- **IN:** 261–267 (incl. Flutter CI 263, DB policy CI 264, release integrity 267), 269, 270 (alerts), 271, 273, 274, 276, 277 (independent security verification), 280 (gate) = 45–90 hours
+- **DEFERRED:** 268, 272, 275, 278, 279 (scale/cost work; revisit before public rollout if pilot load grows)
 
-**WS15 (Deployment, launch):** All 281–300 (Android build, store, deploy, rollout) = 60–120 hours (required for launch, not deferrable)
+**WS15 (Deployment, launch):** 281–297, 299, 300 = 57–114 hours. **Deferred-disabled:** 298 (AI cohort; AI flag off).
 
-**Core-release slice total:**
-- Base: WS1–8 (460) + WS13 IN (18) + WS14 IN (15) + WS15 (60) = **553–1,106 hours**
-- With 25% contingency: **691–1,382 hours**
-- Solo @ 30 h/week: **23–46 weeks** (~5–11 months; not a 4-week or 12-week delivery with realistic scope)
+**Core-release slice total (recomputed from each phase's Effort line in the plan):**
+- Base: WS1–8 (460–920) + WS13 IN (39–78) + WS14 IN (45–90) + WS15 IN (57–114) = **601–1,202 hours**
+- With 25% contingency: **751–1,503 hours**
+- Solo @ 30 h/week: **25–50 weeks** (~6–12 months; not a 4-week or 12-week delivery with realistic scope). WS5–8 hours are an upper bound when media intake stays disabled.
 
 **Feature flags for deferred items (per plan lines 112–114):**
 - Saathi AI: `FEATURE_AI_ENABLED = false` → UI, endpoints, jobs disabled; core behavior independent
@@ -214,7 +214,7 @@ TOTAL BASE: 940–1,880 | WITH 25% CONTINGENCY: 1,175–2,350
 - **Owner:** Product lead
 - **Explicit action:** Decide staffing model (solo vs. 4-engineer vs. 6-engineer team); confirm external account owners (SMS vendor, Play Store, legal counsel); adjust weeks if waits are longer; proceed to phase 021 (Database authorization).
 
-## Chief-engineer review (2026-10-06) — supersedes the WS13–15 "IN" lists above
+## Chief-engineer review (2026-10-06) — folded into the tables above on 2026-10-07
 
 The worker's slice deferred controls that the plan's core cut line (plan lines 82–88) and non-negotiable gates require: 242 role matrix (authorization), 247/249/251/253 (processor register, data access, retention, breach-notification process — legal/privacy), 263/264/267 (Flutter + DB policy CI, release integrity — the security regression pack is a gate), 270/277 (alerts, independent security verification), and the gates 260/280 themselves. Corrected classification:
 

@@ -1,6 +1,6 @@
 # Phase 001 Evidence — Repository and artifact inventory
 
-**Status:** In review  
+**Status:** Done (gate passed in phase-020; human sign-off pending)  
 **Objective:** Establish truth about existing Flutter and Supabase product implementation; classify all components (implemented/partial/missing/unverified).
 
 ---
@@ -11,7 +11,7 @@
 - **Status:** Missing  
 - **Finding:** `git status` returns "not a git repository"  
 - **Recovery approach:** Baseline tarball created in session scratchpad (`/c/Users/alonso/AppData/Local/Temp/claude/...`)  
-- **Recommendation:** `git init`, commit entire baseline before Phase 021 implementation  
+- **Recommendation:** `git init`, commit entire baseline before Phase 021 implementation (done late, 2026-10-07, commit `8838c54`)  
 - **Owner:** Integration engineer
 
 ---
@@ -20,20 +20,20 @@
 
 | Feature | Screen/Widget Files | Status | Notes |
 |---|---|---|---|
-| **Home** | `home/` (3 dart files) | Implemented | Search bar, category grid, sponsored/organic display |
-| **Search** | `search/` (4 dart files) | Implemented | Results, filters (locality, category, open-now), pagination UI designed |
-| **Provider Profile** | `provider_profile/` (5 dart files) | Implemented | Public view, call/WhatsApp (see Contact below), report sheet, share |
+| **Home** | `home/` (2 dart files) | Implemented | Search bar, category grid, sponsored/organic display |
+| **Search** | `search/` (2 dart files) | Implemented | Results, filters (locality, category, open-now), pagination UI designed |
+| **Provider Profile** | `provider_profile/` (2 dart files) | Implemented | Public view, call/WhatsApp (see Contact below), report sheet, share |
 | **Location** | `location/` (3 dart files) | Implemented | City/locality picker, unsupported-city flow, request-city form |
-| **Categories** | `categories/` (2 dart files) | Implemented | Full taxonomy browser, grouped by trade |
-| **Saved Providers** | `saved/` (2 dart files) | Implemented | Local bookmark list (SharedPreferences, no login required) |
-| **Provider Onboarding** | `provider/` (8 dart files) | Implemented | 10-step wizard, trade selection, locality, working hours, photos, draft persistence |
-| **Account/Settings** | `account/` (4 dart files) | Implemented | Language, help, terms, account deletion, logout |
-| **Welcome** | `welcome/` (2 dart files) | Implemented | First-run onboarding, locality selection |
-| **Monetization** | `monetization/` (2 dart files) | Implemented | "Grow your business", subscription tiers (UI only) |
+| **Categories** | `categories/` (1 dart file) | Implemented | Full taxonomy browser, grouped by trade |
+| **Saved Providers** | `saved/` (1 dart file) | Implemented | Local bookmark list (SharedPreferences, no login required) |
+| **Provider Onboarding** | `provider/` (6 dart files) | Implemented | 9-step wizard (`_Step` enum; plan prose says 10), trade selection, locality, working hours, photos, draft persistence |
+| **Account/Settings** | `account/` (2 dart files) | Implemented | Language, help, terms, account deletion, logout |
+| **Welcome** | `welcome/` (1 dart file) | Implemented | First-run onboarding, locality selection |
+| **Monetization** | `monetization/` (1 dart file) | Implemented | "Grow your business", subscription tiers (UI only) |
 | **Legal** | `legal/` (2 dart files) | Implemented | Trust & Safety, Terms, Privacy, Help (placeholder content) |
 | **Invite** | `invite/` (1 dart file) | Implemented | Native Android share sheet for inviting providers |
 
-**Finding:** All 13 feature packages present with 38 screen files. UI structure complete; production wiring incomplete.
+**Finding:** All 12 feature packages present with 24 `.dart` files (`find lib/features -name '*.dart' | wc -l` = 24). UI structure complete; production wiring incomplete.
 
 ---
 
@@ -76,7 +76,7 @@
 | `MockProviderAuthRepository` | `mock_auth_repository.dart` | Implemented | In-memory phone/OTP state, fixed code `123456` |
 | `MockProviderRepository` | `mock_provider_repository.dart` | Implemented | 70 seed providers, full CRUD, search with `pg_trgm`-equivalent matching |
 | `MockLocationRepository` | `mock_location_repository.dart` | Implemented | All India geo data, city activation toggle, locally persisted requests |
-| `MockServiceCatalogRepository` | `mock_service_catalog_repository.dart` | Implemented | 6 groups, 28+ categories, healthcare flag |
+| `MockServiceCatalogRepository` | `mock_service_catalog_repository.dart` | Implemented | 6 groups, 45 categories (verified in phase-009), healthcare flag |
 | `MockReportRepository` | `mock_report_and_engagement_repositories.dart` | Implemented | Guest-local report tracking (SharedPreferences) |
 | `MockEngagementRepository` | `mock_report_and_engagement_repositories.dart` | Implemented | In-memory event buffer |
 | `Mock*SupportRepositories` (5) | `mock_profile_support_repositories.dart` | Implemented | Saved providers, drafts, consent, verification, credentials (all local) |
@@ -93,7 +93,7 @@
 | Real location repository | `lib/data/supabase/supabase_location_repository.dart` | Missing | Read-only city/locality/state from Postgres |
 | Real catalog repository | `lib/data/supabase/supabase_service_catalog_repository.dart` | Missing | Service taxonomy from Postgres |
 
-**Owner:** Backend integration engineer (Phase 021+)
+**Owner:** Backend integration engineer (Phases 061+)
 
 ---
 
@@ -179,10 +179,10 @@
 
 | File | Status | Records | Purpose |
 |---|---|---|---|
-| `location_seed.dart` | Implemented | 1 country (India), 37 states/UTs, 1 city (Mumbai), 73 localities | Geographic baseline |
-| `category_seed.dart` | Implemented | 6 groups, 28 categories, keywords, healthcare flags | Service taxonomy |
+| `location_seed.dart` | Implemented | 1 country (India), 37 states/UTs, 1 city (Mumbai), 43 Mumbai localities (verified in phase-009) | Geographic baseline |
+| `category_seed.dart` | Implemented | 6 groups, 45 categories, keywords, healthcare flags | Service taxonomy |
 | `provider_seed.dart` | Implemented | 70 fictional providers with masked numbers | Realistic demo data |
-| `locality_coordinates.dart` | Implemented | ~73 lat/lng points for Mumbai localities | Map seeding |
+| `locality_coordinates.dart` | Implemented | lat/lng points for the Mumbai localities | Map seeding |
 
 **Finding:** Complete seed data. Generate-from-seed pattern (Flutter→SQL) confirms byte-for-byte sync.
 
@@ -205,7 +205,7 @@
 | `20260101000011_storage.sql` | Implemented | Storage bucket (provider-photos) + RLS policies | Not run |
 | `20260101000012_map_location_and_terms.sql` | Implemented | Map location + terms acceptance tracking | Not run |
 
-**Finding:** 12 migrations, complete schema. **Not executed** — no Docker/Supabase CLI available in authoring environment. See Phase 021.
+**Finding (as of 2026-10-06; now 22 migrations, 0001–0022, all applied in PGlite):** 12 migrations, complete schema. **Not executed against a full Supabase stack** (no Docker/Supabase CLI). Executed in PGlite from Phase 004; full Supabase stack is Phase 006 (Blocked).
 
 ---
 
@@ -231,7 +231,7 @@
 | `0005_private_fields.test.sql` | Implemented | Private fields never leak (moderation_status, suspension_reason) | 4 tests |
 | `README.md` | Implemented | pgTAP scenario mapping | Coverage guide |
 
-**Finding (reviewer-corrected 2026-10-06):** 5 pgTAP suites, 17 assertions. Executed in PGlite by `node backend/scripts/verify-db.mjs`: 5/5 files, 17/17 PASS after phase 004 fixture repair. Not yet run on a full Supabase stack (phase 006 Blocked: no Docker).
+**Finding (reviewer-corrected 2026-10-06; now 15 suites / 165 assertions):** 5 pgTAP suites, 17 assertions. Executed in PGlite by `node backend/scripts/verify-db.mjs`: 5/5 files, 17/17 PASS after phase 004 fixture repair. Not yet run on a full Supabase stack (phase 006 Blocked: no Docker).
 
 ---
 
@@ -250,7 +250,7 @@
 
 | File | Status | Purpose |
 |---|---|---|
-| `backend/config.toml` | Implemented | Supabase local dev config (Auth test OTP, JWT expiry) |
+| `backend/supabase/config.toml` | Implemented | Supabase local dev config (Auth test OTP, JWT expiry) |
 | `backend/scripts/generate_seed_sql.py` | Implemented | Generates seed.sql from Flutter seed files |
 | `backend/README.md` | Implemented | Setup and test instructions |
 
@@ -282,7 +282,7 @@
 | `map_and_legal_test.dart` | Implemented | Unit | Map rendering, legal layout | Passes |
 | `reveal_test.dart` | Implemented | Unit | Disclosure widget | Passes |
 
-**Finding:** 7 test files, mixed pass/fail. Root cause in domain layer (Phase 007).
+**Finding (as of 2026-10-06; now 13 test files, +95 ~2 −0):** 7 test files, mixed pass/fail. Root cause in domain layer (Phase 005 records it; fixes land in Phases 061+).
 
 **Test failures (10 from localsaathi_core_test.dart):**
 - Mock search returning wrong field names or missing fields
@@ -290,7 +290,7 @@
 - Verification record shape mismatch
 - Other mock/model sync issues
 
-**Owner:** Backend integration engineer (Phase 007)
+**Owner:** Backend integration engineer (Phases 061+)
 
 ---
 
@@ -301,7 +301,7 @@
 | `assets/fonts/` | Implemented | Plus Jakarta Sans (400, 500, 600, 700 weights) |
 | `assets/lottie/` | Implemented | Loading animations |
 | `assets/icons/` | Implemented | App icons and category service icons |
-| `showcase/` | Implemented | Older standalone HTML click-through demo |
+| ~~`showcase/`~~ | **Deleted 2026-10-07** (owner request) | Was an older standalone HTML click-through demo; the Flutter web build replaces it |
 
 **Finding:** Complete asset baseline. No web exported yet.
 
@@ -314,7 +314,7 @@
 | `store/assets/` | Implemented | Placeholder screenshots (may show failures) |
 | `store/screenshots/` | Implemented | Store listing assets (incomplete) |
 
-**Finding:** Store directory exists. Graphics may be outdated; see Phase 004 (Play listing).
+**Finding:** Store directory exists. Graphics may be outdated; see Workstream 15 (Phases 281–300, store listing).
 
 ---
 
@@ -327,7 +327,7 @@
 | `lib/data/supabase/` | Missing | No Supabase repository implementations |
 | `docs/deploy/` | Partial | `deployment.md` missing; see `tasks/plan.md` for structure |
 
-**Owner:** Infrastructure engineer (Phase 003+) for CI; Backend engineer for Supabase layer
+**Owner:** Infrastructure engineer (Phases 263–267) for CI; Backend engineer for Supabase layer
 
 ---
 
@@ -336,7 +336,7 @@
 | Method | Status | Wiring |
 |---|---|---|
 | `AppDependencies.mock()` | Implemented | **Always selected** in lib/main.dart (unconditional) |
-| `AppDependencies.supabase()` | Missing | Planned for Phase 021 |
+| `AppDependencies.supabase()` | Missing | Planned for Phases 061+ |
 
 **Finding:** lib/main.dart hardcodes mock path (`AppDependencies.mock`). No environment selection exists yet.
 
@@ -346,7 +346,7 @@
 return await AppDependencies.mock(keyValueStore: store);  // HARDCODED
 ```
 
-**Owner:** Backend integration engineer (Phase 021)
+**Owner:** Backend integration engineer (Phases 061+)
 
 ---
 
@@ -356,7 +356,7 @@ return await AppDependencies.mock(keyValueStore: store);  // HARDCODED
 
 | Category | Count | Notes |
 |---|---|---|
-| Feature screens | 13 packages, 38+ files | Complete UI layer |
+| Feature screens | 12 packages, 24 files | Complete UI layer |
 | Controllers | 5 | ChangeNotifier-based, ready for Supabase |
 | Repository interfaces | 7 | 60+ abstract methods |
 | Mock repositories | 8 | Full in-memory implementation |
@@ -366,8 +366,8 @@ return await AppDependencies.mock(keyValueStore: store);  // HARDCODED
 | Theme/config | 5 files | Design tokens consistent |
 | Migrations | 12 | Complete schema, not executed |
 | Edge Functions | 1 | delete-account, not tested |
-| Tests (Flutter) | 7 files | 6 pass, 1 with 10 failures |
-| pgTAP tests | 5 suites, 17 assertions | PGlite PASS (phase 004); full-stack unverified (phase 006) |
+| Tests (Flutter) | 7 files then; 13 now | 6 pass, 1 with 10 failures then; all pass now (2 skips) |
+| pgTAP tests | 5 suites, 17 assertions then; 15 / 165 now | PGlite PASS (phase 004); full-stack unverified (phase 006) |
 | Seed data | 4 files | Location/category/provider seed |
 | Tools | 3 | Python verification/export/icon generation |
 | Assets | Fonts, icons, animations | Complete |
@@ -376,18 +376,18 @@ return await AppDependencies.mock(keyValueStore: store);  // HARDCODED
 
 | Component | Issue | Owner | Timeline |
 |---|---|---|---|
-| Contact action (Call/WhatsApp) | Shows "not wired" modal; no real dialer/WhatsApp launch | Backend integration engineer | Phase 021 |
+| Contact action (Call/WhatsApp) | Shows "not wired" modal; no real dialer/WhatsApp launch | Mobile engineer | Phases 061+ (Flutter Supabase integration) |
 
 ### Missing (✗)
 
 | Component | Path | Owner | Timeline |
 |---|---|---|---|
-| Supabase repository layer | `lib/data/supabase/` | Backend integration engineer | Phase 021 |
-| Website (Astro static) | `website/` | Web engineer | Phase 005 |
-| CI/CD workflows | `.github/workflows/` | Infrastructure engineer | Phase 003 |
-| Deployment runbooks | `docs/deploy/` (except backend-contract.md) | Integration engineer | Phase 002 |
-| Git repository | `.git/` | Setup | Immediate: `git init` |
-| Real auth/provider/catalog repos | (concrete classes) | Backend integration engineer | Phase 021+ |
+| Supabase repository layer | `lib/data/supabase/` | Backend integration engineer | Phases 061+ |
+| Website (Astro static) | `website/` | Web engineer | Phases 141–160 |
+| CI/CD workflows | `.github/workflows/` | Infrastructure engineer | Phases 263–267 |
+| Deployment runbooks | `docs/deploy/` (except backend-contract.md) | Integration engineer | Workstream 15 (Phases 281–300) |
+| Git repository | `.git/` | Setup | Done 2026-10-07: `git init` + baseline commit `8838c54` |
+| Real auth/provider/catalog repos | (concrete classes) | Backend integration engineer | Phases 061+ |
 
 ---
 
@@ -395,11 +395,11 @@ return await AppDependencies.mock(keyValueStore: store);  // HARDCODED
 
 | Assumption | Current State | Owner | Issue |
 |---|---|---|---|
-| Supabase will be hosted backend | Migrations written, not executed | Backend integration engineer | Need real Supabase project for Phase 021 |
+| Supabase will be hosted backend | Migrations written, not executed | Backend integration engineer | Need real Supabase project for Phase 006 and Phases 061+ |
 | SMS OTP provider (MSG91 vs Twilio Verify) | Open decision per backend-contract.md | Product lead | DLT regulations for India |
 | Website mirrors app from this repo | No website/ yet; design intent documented in plan.md | Web engineer + product lead | Astro static site not started |
 | Android-only launch (no iOS) | App targets API 36; iOS not ruled out, just out of scope | Product lead | Play Store only for now |
-| Contact is live tel: and wa.me: links | Currently shows "not wired" modal on demo | Backend integration engineer | Wiring happens in Phase 021 |
+| Contact is live tel: and wa.me: links | Currently shows "not wired" modal on demo | Backend integration engineer | Wiring happens in Phases 061+ (Workstream 4) |
 | No login required for guest search | Implemented, tested | Product lead | Confirmed by design |
 | Local-only bookmarks (no sync) | Implemented, SharedPreferences | Product lead | Confirmed by design |
 
@@ -426,6 +426,7 @@ $ find /c/Users/alonso/Documents/Localsaathi/test -name "*.dart" -type f | wc -l
 ```bash
 $ git status
 fatal: not a git repository (or any of the parent directories): .git
+# (2026-10-06 output. Resolved 2026-10-07: git init + baseline commit 8838c54.)
 → Confirms no .git directory
 
 $ grep -r "AppDependencies.mock" /c/Users/alonso/Documents/Localsaathi/lib/main.dart
@@ -448,7 +449,7 @@ MISSING
 ### "Not Wired" Markers
 ```bash
 $ grep -r "not wired" /c/Users/alonso/Documents/Localsaathi/lib --include="*.dart" | wc -l
-2
+3
 
 Locations:
   - lib/core/l10n/app_strings.dart: "Calling is not wired in this build..."
@@ -466,7 +467,7 @@ Locations:
 
 3. **Test failures root cause:** 10 failures in localsaathi_core_test.dart traced to mock/model shape sync issues, not yet fixed.
 
-4. **Android build:** `flutter build appbundle` reportedly fails today (Gradle version mismatch); not verified in this environment.
+4. **Android build:** `flutter build appbundle` reportedly failed (Gradle mismatch); the repo is now on Gradle 9.3.1 / AGP 9.1.0 (phase 007) but **no release build has been run since** (RAM constraint). Still unverified.
 
 5. **SMS provider:** India TRAI DLT regulations + SMS provider selection (Twilio Verify vs. MSG91/Gupshup custom hook) is documented but not resolved.
 
@@ -474,32 +475,26 @@ Locations:
 
 ## Next Integration Action
 
-1. **Immediate (this session):**
-   - `git init` and commit entire baseline to establish version history
-   - Document the tarball location in tasks/evidence/phase-001.md for recovery
+Phase numbers below are from `tasks/implementation-plan-320-phases.md` (not the older 7-workstream `plan.md`).
 
-2. **Phase 021 (Backend integration):**
+1. **Done 2026-10-07:** `git init` and baseline commit `8838c54` (late: Phases 021–039 ran before it with only a temp tarball as backup).
+
+2. **Phases 021–040 (Database security):** privilege inventory, public projection, definer hardening; HTTP repetition blocked on Phase 006 (Docker / staging).
+
+3. **Phases 061+ (Flutter Supabase integration):**
    - Obtain Supabase project credentials (SUPABASE_URL, SUPABASE_ANON_KEY)
-   - Run `supabase start` locally and `supabase test db` to verify migrations
    - Implement SupabaseProviderAuthRepository, SupabaseProviderRepository, etc.
-   - Wire real Supabase repositories into AppDependencies with environment selection
+   - Wire real repositories into AppDependencies with environment selection
    - Test contact action (Call/WhatsApp) with real phone numbers
+   - Resolve the Flutter test failures recorded in phase-005.md
 
-3. **Phase 003 (Deployment infrastructure):**
-   - Set up `.github/workflows/` for CI/CD
-   - Create `docs/deploy/` runbooks for Android, website, backend
+4. **Phases 141–160 (Website):** build `website/` from app seed data, l10n and design tokens.
 
-4. **Phase 005 (Website):**
-   - Build `website/` as Astro static site using app seed data
-   - Export from lib/core/l10n and design tokens
-
-5. **Phase 007 (Test health):**
-   - Resolve Flutter test failures recorded in phase-005.md (counts come from that execution, not this inventory)
-   - Achieve 100% pass rate
+5. **Phases 263–267 (CI/CD and deploy):** `.github/workflows/` and `docs/deploy/` runbooks.
 
 ---
 
-**File inventory complete. All paths verified on 2026-10-06. Ready for Phase 021 implementation.**
+**File inventory complete. Counts above were re-verified on 2026-10-07 after the independent audit below; the audit table is kept as history.**
 
 ## Independent audit (2026-10-06)
 

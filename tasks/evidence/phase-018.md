@@ -1,6 +1,6 @@
 # Phase 018 — Coding-agent execution protocol
 
-**Status:** In review
+**Status:** Done (gate passed in phase-020; human sign-off pending)
 
 ## Objective
 Define bounded assignments, file-ownership rules, integration-owner responsibilities, evidence-note templates, review checklists, and honest reporting standards. Record the handoff trial dispatching phases 001–019 to 9 parallel subagents (Haiku/Sonnet workers) with disjoint file ownership, Opus as reviewer.
@@ -68,15 +68,15 @@ Define bounded assignments, file-ownership rules, integration-owner responsibili
 |-----------|------|--------|
 | One owner per migration file (backend/supabase/migrations/*.sql) | No concurrent edits; serialized by integration owner | Concurrency conflicts in migration apply order |
 | One owner for composition root (lib/app/app_dependencies.dart) | Serialize environment wiring and dependency injection | Merge conflicts break dependency resolution |
-| One owner for shared models (lib/domain/models/\*.dart) | Serialize serialization trait implementations (@JsonSerializable) | Multiple implementations of fromJson/toJson are unsync |
-| One owner for each l10n file (lib/core/l10n/\*.arb) | Serialize translations; coordinate language additions | Keys and translations must stay aligned across languages |
-| Independent adapters/screens | Parallel edits allowed (lib/data/adapters/\*.dart, lib/presentation/screens/\*.dart) | Isolated module contracts; review per-module |
+| One owner for shared models (lib/domain/models/\*.dart) | Serialize the hand-written `fromJson`/`toJson` (no codegen) | Contract fixtures (`docs/contracts/fixtures`, `test/contract_fixtures_test.dart`) must stay in sync |
+| One owner for each l10n file (`lib/core/l10n/app_strings*.dart`; Dart classes, not `.arb`) | Serialize translations; coordinate language additions | Keys and translations must stay aligned across languages |
+| Independent adapters/screens | Parallel edits allowed (`lib/data/repositories/*.dart`, `lib/features/**`) | Isolated module contracts; review per-module |
 
 ### Integration owner responsibilities
 - **Assign file ownership** before dispatch (all phases must declare their changed paths in evidence)
 - **Resolve conflicts** if two phases touch a locked file (escalate to Opus; re-scope one phase)
 - **Serialize composition-root edits:** Each phase must declare new dependencies before merging; integration owner wires them in lib/app/app_dependencies.dart
-- **Validate l10n keys:** Gather all string keys, ensure no collisions, commit unified .arb files
+- **Validate l10n keys:** Gather all string keys, ensure no collisions, commit `app_strings_en/hi/mr.dart` together
 - **Database migration order:** Verify apply sequence; test migration-up and rollback before release
 - **Preserve unrelated changes:** Before merging, check git status; stash unrelated edits, re-apply after merge
 
@@ -107,8 +107,9 @@ Define bounded assignments, file-ownership rules, integration-owner responsibili
 10. Do not mark phase Done until Opus reviews
 
 ## Honest reporting: unrun checks
-- **Flutter test execution:** Skipped in phase 005 due to SDK path issue (documented separately)
-- **Database SQL test suite:** Partial pass (2/6 in phase 004 baseline; harness repair needed)
+- **Flutter test execution:** Run in phase 005 (+58 −10 then; the 10 known failures in `localsaathi_core_test.dart` have root causes in phase-005.md). Flutter SDK is at `C:\Users\alonso\flutter\bin`, not on PATH.
+- **Database SQL test suite:** Repaired in phase 004; now `node backend/scripts/verify-db.mjs` → 14/14 files, 151/151 assertions, plus the column-classification check
+- **Full Supabase stack / HTTP:** Not run (phase 006 Blocked on Docker); the phase 039 pack is ready
 - **Android build on CI:** Not executed in this dispatch; scheduled for phases 007/280
 - **Website render (Astro):** Not started; phase 141+ in separate workstream
 
@@ -151,7 +152,7 @@ Assigned to: Opus (chief engineer)
 | Claim | Verdict | Proof |
 |-------|---------|-------|
 | Evidence template provided | Confirmed | Lines 33-63 show complete markdown template with 8 required sections |
-| File ownership rules documented | Confirmed | Table at lines 67-73 lists 5 ownership categories (migrations, composition root, shared models, l10n, adapters) |
+| File ownership rules documented | Confirmed | Table at lines 67-73 lists 5 ownership categories (migrations, composition root, shared models, l10n, repositories/features) |
 | Integration owner responsibilities listed | Confirmed | 4 responsibilities documented (assign ownership, resolve conflicts, serialize composition root, validate l10n) |
 | Review checklist provided | Confirmed | Lines 84-95 contain 10-item checklist (evidence present, objective matches, commands/results verbatim, etc.) |
 | Honest reporting section present | Confirmed | Lines 109-113 list 4 unrun checks (Flutter test, DB tests, Android build, Astro) with documented reasons |

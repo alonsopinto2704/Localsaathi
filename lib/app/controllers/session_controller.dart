@@ -39,13 +39,19 @@ class SessionController extends ChangeNotifier {
     required ProviderAuthRepository auth,
     required ProviderRepository providers,
     required ConsentRepository consents,
+    required ProviderDraftRepository drafts,
   })  : _auth = auth,
         _providers = providers,
-        _consents = consents;
+        _consents = consents,
+        _drafts = drafts;
 
   final ProviderAuthRepository _auth;
   final ProviderRepository _providers;
   final ConsentRepository _consents;
+
+  /// The onboarding draft is device state holding a phone number; it must not
+  /// outlive the person who signed out or deleted their account (phase 003).
+  final ProviderDraftRepository _drafts;
 
   SessionStatus _status = SessionStatus.signedOut;
   ProviderSession? _session;
@@ -393,6 +399,7 @@ class SessionController extends ChangeNotifier {
     _setBusy(true);
     try {
       await _auth.deleteAccount();
+      await _drafts.clear();
       _profile = null;
       _account = null;
       _session = null;
@@ -408,6 +415,7 @@ class SessionController extends ChangeNotifier {
 
   Future<void> signOut() async {
     await _auth.signOut();
+    await _drafts.clear();
     _session = null;
     _account = null;
     _profile = null;

@@ -177,3 +177,13 @@ begin
 end;
 $$;
 grant execute on function tests.create_admin(text) to anon, authenticated;
+
+-- Feature flags default to production values (most intake off); a suite that
+-- exercises a gated capability turns its flag on inside its own transaction.
+create or replace function tests.set_flag(p_key text, p_enabled boolean)
+returns void
+language sql
+as $$
+  insert into public.feature_flags (key, enabled, reason) values (p_key, p_enabled, 'test')
+  on conflict (key) do update set enabled = excluded.enabled;
+$$;

@@ -103,7 +103,10 @@ class MockProviderRepository implements ProviderRepository {
       matches: matches,
       cityId: query.cityId,
       localityId: query.localityId,
-      categoryIds: query.categoryIds,
+      // A text search ("plumber") targets the categories it resolved to.
+      categoryIds: query.categoryIds.isNotEmpty
+          ? query.categoryIds
+          : searchedCategories.toList(),
     );
 
     final Set<String> sponsoredIds =
@@ -134,7 +137,7 @@ class MockProviderRepository implements ProviderRepository {
   @override
   Future<ProviderProfile?> publicProfileById(String id) async {
     final ProviderProfile? profile = _store.profilesById[id];
-    if (profile == null || !profile.isPubliclyVisible) return null;
+    if (profile == null || !_store.isListed(profile)) return null;
     return profile;
   }
 
@@ -274,9 +277,25 @@ class MockProviderRepository implements ProviderRepository {
       _store.session = _store.session!.copyWith(profileId: id);
     }
 
+    // Same as the server's register_profile (migration 0017): the confirmed
+    // OTP is recorded as phone verification, and only that.
+    _store.verificationRecords.add(
+      VerificationRecord(
+        id: _store.newId('ver'),
+        providerId: id,
+        kind: VerificationKind.phone,
+        status: VerificationStatus.approved,
+        createdAt: _now,
+        method: 'otp_simulated',
+        note: 'Phone control confirmed by one-time code. This says nothing '
+            'about professional qualifications.',
+      ),
+    );
+
     await _store.persistProfiles();
     await _store.persistAccounts();
     await _store.persistSession();
+    await _store.persistVerification();
     return profile;
   }
 
@@ -424,17 +443,21 @@ class MockProviderRepository implements ProviderRepository {
             p.id != provider.id &&
             p.baseCityId == provider.baseCityId &&
             p.categoryIds.any(provider.categoryIds.contains) &&
-            p.servedLocalityIds.any(targetLocalities.contains))
+            p.servedLocalityIds.any(targetLocalities.contains),)
         .toList();
     candidates.sort((ProviderProfile a, ProviderProfile b) =>
-        a.displayName.compareTo(b.displayName));
+        a.displayName.compareTo(b.displayName),);
     if (candidates.length > limit) return candidates.sublist(0, limit);
     return candidates;
   }
 
   // ------------------------------------------------------------- internals
+  // Ownership follows the verified identity (the session's phone), like the
+  // server's user_id check -- not a profileId cached in a session object that
+  // predates the listing's creation.
   void _assertOwner(String profileId, ProviderSession session) {
-    if (session.profileId != profileId) {
+    final ProviderProfile? profile = _store.profilesById[profileId];
+    if (profile == null || profile.phoneE164 != session.phoneE164) {
       throw const RepositoryException(RepositoryErrorCode.notOwner);
     }
   }
@@ -512,11 +535,12 @@ class MockProviderRepository implements ProviderRepository {
 
     final List<ProviderProfile> sponsored = <ProviderProfile>[];
     for (final Promotion promotion in active) {
-      final bool matchesContext = promotion.matches(
-        cityId: cityId,
-        localityId: localityId,
-        categoryId: categoryIds.isEmpty ? null : categoryIds.first,
-      );
+      final bool matchesContext = (categoryIds.isEmpty ? <String?>[null] : categoryIds)
+          .any((String? categoryId) => promotion.matches(
+                cityId: cityId,
+                localityId: localityId,
+                categoryId: categoryId,
+              ),);
       if (!matchesContext) continue;
       for (final ProviderProfile profile in matches) {
         if (profile.id == promotion.providerId &&

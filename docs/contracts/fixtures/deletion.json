@@ -1,33 +1,60 @@
 {
-  "fixtureVersion": 1,
+  "fixtureVersion": 2,
   "name": "deletion",
   "synthetic": true,
-  "operation": "deleteListing (direct DELETE on provider_profiles) and deleteAccount (Edge Function delete-account)",
+  "operation": "deleteListing (rpc delete_listing) and deleteAccount (Edge Function delete-account)",
   "notes": [
+    "Re-baselined 2026-10-07 to migrations through 20261006000021 (v2). v1 described 0001-0012.",
     "Both are HARD deletes. Dart ProviderRepository.deleteListing is documented as 'soft-deletes' (provider_repository.dart:217) and ListingStatus.deleted exists in Dart, but SQL has no deleted status and cascades the row away (docs/backend-contract.md 4.6).",
-    "deleteAccount removes auth.users and cascades all public rows (consent, reports, engagement), but backend/supabase/functions/delete-account/index.ts does not delete Storage objects in provider-photos or credential-evidence, so files can outlive the account.",
-    "A DELETE on a row the caller does not own returns 204 with zero rows (RLS filters it), indistinguishable from success unless 'Prefer: return=representation' is sent and the result is counted."
+    "deleteAccount removes auth.users and cascades public rows; reports keep a provider_snapshot with provider_id set null (20261006000019_retention.sql), and storage prefixes are queued for cleanup by the Edge Function (backend/supabase/functions/delete-account/index.ts).",
+    "Direct DELETE on provider_profiles is no longer possible for owners (policy dropped in 20261006000017:487); a non-owner gets an explicit not_owner instead of a silent zero-row delete."
   ],
   "deleteListing": {
     "success": {
       "request": {
-        "method": "DELETE",
-        "path": "/rest/v1/provider_profiles?id=eq.0f3c1a2e-7b44-4d0a-9a51-6c2d0e5b1a04",
-        "headers": {"authorization": "Bearer <user-jwt>", "prefer": "return=representation"}
-      },
-      "response": {"status": 200, "body": [{"id": "0f3c1a2e-7b44-4d0a-9a51-6c2d0e5b1a04"}]}
-    },
-    "error": {
-      "description": "Non-owner delete. Today: HTTP 200 with an empty array under return=representation (or 204 without it). Target: a delete_my_listing RPC raising not_owner.",
-      "request": {
-        "method": "DELETE",
-        "path": "/rest/v1/provider_profiles?id=eq.0f3c1a2e-7b44-4d0a-9a51-6c2d0e5b1a04",
-        "headers": {"authorization": "Bearer <other-user-jwt>", "prefer": "return=representation"}
+        "method": "POST",
+        "path": "/rest/v1/rpc/delete_listing",
+        "headers": {
+          "authorization": "Bearer <user-jwt>"
+        },
+        "body": {
+          "p_profile_id": "0f3c1a2e-7b44-4d0a-9a51-6c2d0e5b1a04"
+        }
       },
       "response": {
-        "status": 200,
-        "wireBody": [],
-        "normalized": {"httpStatus": 403, "body": {"error": {"code": "NOT_OWNER", "message": "You cannot delete another provider's listing."}}}
+        "status": 204,
+        "body": null
+      }
+    },
+    "error": {
+      "description": "Non-owner delete. delete_listing locks the row via private.lock_owned_profile, which raises 'not_owner: ...' (20261006000017_owner_writes.sql:264); the direct DELETE policy was dropped (:487).",
+      "request": {
+        "method": "POST",
+        "path": "/rest/v1/rpc/delete_listing",
+        "headers": {
+          "authorization": "Bearer <other-user-jwt>"
+        },
+        "body": {
+          "p_profile_id": "0f3c1a2e-7b44-4d0a-9a51-6c2d0e5b1a04"
+        }
+      },
+      "response": {
+        "status": 400,
+        "wireBody": {
+          "code": "P0001",
+          "details": null,
+          "hint": null,
+          "message": "not_owner: cannot edit another provider's profile"
+        },
+        "normalized": {
+          "httpStatus": 403,
+          "body": {
+            "error": {
+              "code": "NOT_OWNER",
+              "message": "You cannot delete another provider's listing."
+            }
+          }
+        }
       }
     }
   },
@@ -36,17 +63,38 @@
       "request": {
         "method": "POST",
         "path": "/functions/v1/delete-account",
-        "headers": {"authorization": "Bearer <user-jwt>"}
+        "headers": {
+          "authorization": "Bearer <user-jwt>"
+        }
       },
-      "response": {"status": 200, "headers": {"content-type": "application/json"}, "body": {"ok": true}}
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "ok": true
+        }
+      }
     },
     "error": {
       "description": "Missing or invalid JWT (index.ts lines 33-45). The function's own body uses bare snake_case 'not_authenticated', not the envelope; normalized form maps it to AUTH_REQUIRED.",
-      "request": {"method": "POST", "path": "/functions/v1/delete-account", "headers": {}},
+      "request": {
+        "method": "POST",
+        "path": "/functions/v1/delete-account",
+        "headers": {}
+      },
       "response": {
         "status": 401,
-        "wireBody": {"error": "not_authenticated"},
-        "normalized": {"error": {"code": "AUTH_REQUIRED", "message": "Sign in again to delete your account."}}
+        "wireBody": {
+          "error": "not_authenticated"
+        },
+        "normalized": {
+          "error": {
+            "code": "AUTH_REQUIRED",
+            "message": "Sign in again to delete your account."
+          }
+        }
       }
     }
   }

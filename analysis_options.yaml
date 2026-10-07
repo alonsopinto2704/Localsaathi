@@ -20,7 +20,6 @@ analyzer:
     - "**/*.freezed.dart"
     - build/**
     - android/**
-    - showcase/**
     - web/**
 
 linter:

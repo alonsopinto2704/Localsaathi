@@ -29,7 +29,7 @@ Migration `…15`: `enforce_profile_mutation_rules` is rewritten as SECURITY DEF
 - `0009` (12 assertions).
 - `0010`: market and category deactivation hide the listing.
 - `0002` and `0004`.
-- Suite: `Tests: 14/14 files passed, 149/149 assertions passed. PASS`.
+- Suite: `Tests: 14/14 files passed, 151/151 assertions passed. PASS`.
 
 ## Rollback
 Pause invalid listings pending owner correction (plan). The predicate already removes them from discovery.

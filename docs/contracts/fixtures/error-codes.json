@@ -118,7 +118,16 @@
       "dartEnum": "(none - propose RepositoryErrorCode.rateLimited)",
       "implementedInSql": true,
       "retryable": true,
-      "meaning": "submit_report (5/hour, 20/day per source; 50/day per listing) and request_city (5/day per source). record_engagement never raises: over-budget events are dropped silently. Source = signed-in user id or daily-rotating hash of the edge client IP."
+      "meaning": "submit_report (5/hour, 20/day per source; 50/day per listing for anonymous and, separately, signed-in reporters), request_city (5/day per source), record_consent and record_terms_acceptance (60/hour per listing, 0021), set_map_location (30/hour, 0022), credential claims (10/day per user, 0022). record_engagement never raises: over-budget events are dropped silently. Source = signed-in user id or daily-rotating hash of the edge client IP; report de-duplication also checks the previous day's hash."
+    },
+    {
+      "code": "FEATURE_DISABLED",
+      "http": 403,
+      "wirePrefix": "feature_disabled",
+      "dartEnum": "(none - propose RepositoryErrorCode.featureDisabled)",
+      "implementedInSql": true,
+      "retryable": false,
+      "meaning": "The capability is switched off by a server feature flag (0022): media_intake, credential_intake, precise_location, provider_signup. The UI should already hide it via get_client_flags; this is the boundary."
     },
     {
       "code": "INTERNAL",

@@ -6,6 +6,7 @@ import 'package:localsaathi/core/l10n/app_strings_hi.dart';
 import 'package:localsaathi/core/utils/phone_number.dart';
 import 'package:localsaathi/core/widgets/provider_contact.dart';
 import 'package:localsaathi/data/local/key_value_store.dart';
+import 'package:localsaathi/data/seed/category_seed.dart';
 import 'package:localsaathi/domain/models/account.dart';
 import 'package:localsaathi/domain/models/enums.dart';
 import 'package:localsaathi/domain/models/location.dart';
@@ -318,6 +319,8 @@ void main() {
         session: session,
         phoneDisplayConsented: true,
       );
+      // createProfile makes a draft; only a published listing can be saved.
+      await dependencies.providers.publish(profileId: mine.id, session: session);
       await dependencies.savedProviders.save(mine.id);
       expect(
         (await dependencies.savedProviders.savedProfiles())
@@ -419,8 +422,10 @@ void main() {
         () async {
       // Walk an existing seeded number through the first step and confirm the
       // response shape carries no hint of the existing profile.
-      final OtpChallengeResult challenge =
-          await dependencies.auth.requestOtp('+91 999 000 011');
+      final String seeded =
+          dependencies.dataStore.profilesById['provider-seed-000']!.phoneE164;
+      final OtpChallengeResult challenge = await dependencies.auth.requestOtp(
+          '${seeded.substring(0, 3)} ${seeded.substring(3, 8)} ${seeded.substring(8)}');
       expect(challenge.isSuccess, isTrue);
       expect(challenge.challenge, isNotNull);
     });
@@ -459,7 +464,7 @@ void main() {
       expect(result.profile?.id, profile.id);
       // Crucially: no second profile was created.
       expect(
-        (await dependencies.providers.publishedInCity('mh-mumbai'))
+        dependencies.dataStore.profilesById.values
             .where((ProviderProfile p) => p.phoneE164 == result.session.phoneE164),
         hasLength(1),
       );
@@ -888,8 +893,17 @@ void main() {
       expect(sponsored, isNotEmpty);
       // Sponsored items are presented as their own labelled group, so they lead.
       expect(sponsored.first.isSponsored, isTrue);
-      // Organic results are never removed to make room for a paid placement.
-      expect(organic.length, greaterThan(sponsored.length));
+      // Organic results are never removed to make room for a paid placement:
+      // every listed match appears exactly once (the seed has a single plumber
+      // in Andheri West, so here that is just the sponsored one).
+      final ProviderSearchResults browse = await dependencies.providers.search(
+        const ProviderQuery(cityId: 'mh-mumbai', localityId: 'mh-mumbai-andheri-west'),
+      );
+      final List<String> ids =
+          browse.items.map((ProviderResultItem i) => i.providerId).toList();
+      expect(ids.toSet().length, ids.length, reason: 'no listing is duplicated');
+      expect(browse.items.where((ProviderResultItem i) => !i.isSponsored), isNotEmpty);
+      expect(organic.length + sponsored.length, results.items.length);
     });
 
     test('monetization stays a preview with no pricing or entitlement',
@@ -1063,10 +1077,17 @@ void main() {
         'other-services',
       ]));
 
-      final List<ServiceCategory> categories =
-          await dependencies.catalog.categories();
-      final Set<String> catIds =
-          categories.map((ServiceCategory c) => c.id).toSet();
+      // Every category exists (lookups by id resolve), but customers only see
+      // the 14 pilot categories open for listings (phase-009).
+      final Set<String> catIds = <String>{
+        for (final ServiceCategory c in CategorySeed.categories) c.id,
+      };
+      expect(
+        (await dependencies.catalog.categories()).map((ServiceCategory c) => c.id).toSet(),
+        <String>{'plumbing', 'electrical', 'carpentry', 'painting', 'ac-repair',
+          'appliance-repair', 'home-cleaning', 'pest-control', 'water-tank-cleaning',
+          'mobile-repair', 'computer-repair', 'mechanic', 'tailoring', 'laundry-ironing'},
+      );
 
       // Home repairs
       expect(catIds, containsAll(<String>[

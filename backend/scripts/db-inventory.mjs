@@ -31,9 +31,9 @@ for (const f of fns) {
 }
 
 const tables = await q(`
-  select n.nspname as schema, c.relname as name, c.relrowsecurity as rls
+  select n.nspname as schema, c.relname || case c.relkind when 'v' then ' (view)' else '' end as name, c.relrowsecurity as rls
   from pg_class c join pg_namespace n on n.oid = c.relnamespace
-  where n.nspname in ('public', 'private', 'storage') and c.relkind = 'r'
+  where n.nspname in ('public', 'private', 'storage') and c.relkind in ('r', 'v')
   order by 1, 2`);
 console.log(`\n## Tables (${tables.length})\n`);
 console.log('| table | RLS | anon | authenticated | policies (cmd: roles) |');
