@@ -1,4 +1,11 @@
 # Minimal local-dev config for `supabase start`. See backend/README.md.
+#
+# THIS FILE MUST BE SAFE TO PUSH (`supabase config push`) TO A HOSTED PROJECT.
+# It therefore contains no fixed OTP, no test number and no secret. A guard
+# (backend/scripts/check-identity-config.mjs, run by `npm --prefix backend test`)
+# fails if a `[auth.sms.test_otp]` entry, a phone-looking key or a literal
+# secret appears here. Local fixed test codes live in
+# config.local-test-otp.toml.example and are applied by hand, never committed.
 project_id = "localsaathi"
 
 [api]
@@ -22,21 +29,44 @@ site_url = "http://localhost:3000"
 additional_redirect_urls = []
 jwt_expiry = 3600
 enable_signup = true
+# Rotating refresh tokens: a replayed (stolen) refresh token revokes the family.
+enable_refresh_token_rotation = true
+refresh_token_reuse_interval = 10
 
-# Phone sign-in. No SMS provider is configured for local dev: the Supabase
-# CLI's local stack captures outgoing OTPs in the Inbucket-style test
-# interface / CLI logs instead of sending a real SMS, so local development
-# needs no SMS account, no cost and no production credentials -- see
-# backend/README.md "Local development without a real SMS provider".
+# Phone sign-in. The code is generated, expired and attempt-limited by Auth.
 [auth.sms]
 enable_signup = true
 enable_confirmations = true
+# 6 digits, valid 10 minutes, at most one send per number every 60 seconds.
+# These match OtpChallengeBook / OtpCooldown in the Flutter client; the client
+# values are courtesy only, these are the control.
+otp_length = 6
+otp_expiry = 600
+max_frequency = "60s"
 
-[auth.sms.test_otp]
-# Local/dev-only fixed OTP for a fixed test number, so manual testing and
-# Flutter integration tests do not need a real phone. Numbers here NEVER work
-# against a deployed project; `supabase start` is local-only.
-"+911234500000" = "123456"
+# Project-wide ceilings enforced by Auth itself (per hour unless noted). They
+# back up the per-number / per-block / global gate in public.otp_send_gate and
+# the circuit breaker (migration 0024). Tune the hosted values in the dashboard
+# (Authentication > Rate limits); `config push` applies these.
+[auth.rate_limit]
+sms_sent = 60
+sign_in_sign_ups = 30
+token_verifications = 60
+token_refresh = 150
+
+# Send SMS hook (phase 043). Disabled until the function is deployed and its
+# secrets exist; enabling it without SEND_SMS_HOOK_SECRET fails the CLI, which
+# is the intended fail-closed behaviour. Never put the secret in this file.
+[auth.hook.send_sms]
+enabled = false
+uri = "http://host.docker.internal:54321/functions/v1/send-sms-hook"
+secrets = "env(SEND_SMS_HOOK_SECRET)"
+
+# TOTP for administrators (phase 054). Providers never enrol: their only factor
+# is the phone code; admin routes additionally require aal2 in the database.
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true
 
 [edge_runtime]
 enabled = true

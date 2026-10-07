@@ -47,6 +47,7 @@ class AppDependencies {
     KeyValueStore? keyValueStore,
     bool persist = true,
     DateTime? now,
+    ProviderAuthRepository? auth,
   }) async {
     final KeyValueStore kv = keyValueStore ?? InMemoryKeyValueStore();
     await kv.init();
@@ -79,7 +80,9 @@ class AppDependencies {
       locations: locations,
       catalog: catalog,
       providers: providers,
-      auth: MockProviderAuthRepository(store: dataStore, now: now),
+      // A live (or fail-closed) repository replaces the simulation only when
+      // the build asks for it; the default stays the mock.
+      auth: auth ?? MockProviderAuthRepository(store: dataStore, now: now),
       savedProviders: MockSavedProviderRepository(
         store: dataStore,
         keyValueStore: kv,

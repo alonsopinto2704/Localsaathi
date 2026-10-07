@@ -6,6 +6,20 @@ This is a new, standalone implementation plan. It preserves every existing impro
 
 **Plan status:** Complete: 320 numbered phase prompts across 16 workstreams. Every implementation phase starts as **Not started**, including phases that verify or reuse existing code. Completing this roadmap does not mean its implementation has been completed.
 
+## Progress index (read this first)
+
+**Done / blocked: phases 001–060. Do not redo them.** Their evidence is in `tasks/evidence/phase-NNN.md`; start from the first phase below that is not marked Done.
+
+| Phases | State |
+|---|---|
+| 001–020 | Done (gate passed in phase 020; human sign-off pending) |
+| 021–038, 040 | Done locally (PGlite); hosted-Supabase repeat blocked |
+| 006, 039 | Blocked: need Docker / a Supabase project |
+| 041–060 | Done locally (PGlite/Node/Flutter with fakes); staging verification blocked (no Supabase project, SMS vendor/DLT, Docker). See `tasks/evidence/phase-060.md` |
+| 061+ | Not started (phase 061 is next; Workstream 4 builds live repositories on the 041–060 identity layer) |
+
+Baselines (2026-10-07, after `tasks/evidence/audit-2026-10-07-followup.md` and migration 0023): `npm --prefix backend test` → 17/17 files, 180/180; `flutter test --no-pub` → 98 pass, 0 skipped. After phases 041–060 (2026-10-07): `npm --prefix backend test` → 23/23 SQL files, 296/296 assertions, plus 27 Node tests (Edge Function logic, fixtures, config guard); the five identity Flutter test files add 110 tests. Next migration number: 20261007000030.
+
 ## Product direction
 
 LocalSaathi should become a dependable Mumbai-first directory for local services, with Flutter Android, a public website, real Supabase services, guest browsing, and English/Hindi/Marathi support. Preserve the useful existing architecture. Provider identity remains one verified phone identity with one owned profile; phone verification must never imply professional qualification or guaranteed safety.
@@ -158,7 +172,7 @@ These links informed the architecture and release checks; phase details are Loca
 
 ### Phase 001 — Repository and artifact inventory
 
-**Status:** Done (see tasks/evidence/phase-001.md). **Suggested owner:** Product lead and integration engineer. **Effort:** 2–4 focused hours. **Release class:** Core launch.
+**Status:** Done (gate passed in phase 020; human sign-off pending). Evidence: tasks/evidence/phase-001.md. **Suggested owner:** Product lead and integration engineer. **Effort:** 2–4 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** No earlier phase required. Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -178,7 +192,7 @@ Inventory screens, controllers, repositories, migrations, Edge Functions, assets
 
 ### Phase 002 — Customer journey baseline
 
-**Status:** Done (see tasks/evidence/phase-002.md). **Suggested owner:** Product lead and integration engineer. **Effort:** 2–4 focused hours. **Release class:** Core launch.
+**Status:** Done (gate passed in phase 020; human sign-off pending). Evidence: tasks/evidence/phase-002.md. **Suggested owner:** Product lead and integration engineer. **Effort:** 2–4 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [001](#phase-001) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -198,7 +212,7 @@ Trace locality selection, search, comparison, saving, reporting, and contact fro
 
 ### Phase 003 — Provider journey baseline
 
-**Status:** Done (see tasks/evidence/phase-003.md). **Suggested owner:** Product lead and integration engineer. **Effort:** 2–4 focused hours. **Release class:** Core launch.
+**Status:** Done (gate passed in phase 020; human sign-off pending). Evidence: tasks/evidence/phase-003.md. **Suggested owner:** Product lead and integration engineer. **Effort:** 2–4 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [001](#phase-001) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -218,7 +232,7 @@ Exercise ten-step onboarding, interrupted drafts, existing numbers, profile edit
 
 ### Phase 004 — Database test runner repair
 
-**Status:** Done (see tasks/evidence/phase-004.md). **Suggested owner:** Product lead and integration engineer. **Effort:** 2–4 focused hours. **Release class:** Core launch.
+**Status:** Done (gate passed in phase 020; human sign-off pending). Evidence: tasks/evidence/phase-004.md. **Suggested owner:** Product lead and integration engineer. **Effort:** 2–4 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [001](#phase-001) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -238,7 +252,7 @@ Inspect verify-db.mjs and helper SQL. Load helper files as setup rather than TAP
 
 ### Phase 005 — Flutter baseline execution
 
-**Status:** Done (see tasks/evidence/phase-005.md). **Suggested owner:** Product lead and integration engineer. **Effort:** 2–4 focused hours. **Release class:** Core launch.
+**Status:** Done (gate passed in phase 020; human sign-off pending). Evidence: tasks/evidence/phase-005.md. **Suggested owner:** Product lead and integration engineer. **Effort:** 2–4 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [001](#phase-001) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -258,7 +272,7 @@ Resolve the installed SDK from local configuration and record Flutter/Dart/toolc
 
 ### Phase 006 — Full Supabase parity check
 
-**Status:** Blocked (see tasks/evidence/phase-006.md). **Suggested owner:** Product lead and integration engineer. **Effort:** 2–4 focused hours. **Release class:** Core launch.
+**Status:** Blocked (needs Docker / a Supabase project; see evidence). Evidence: tasks/evidence/phase-006.md. **Suggested owner:** Product lead and integration engineer. **Effort:** 2–4 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [001](#phase-001), [004](#phase-004) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -278,7 +292,7 @@ Run a disposable complete Supabase stack alongside PGlite. Compare Auth claims, 
 
 ### Phase 007 — Release configuration baseline
 
-**Status:** Done (see tasks/evidence/phase-007.md). **Suggested owner:** Product lead and integration engineer. **Effort:** 2–4 focused hours. **Release class:** Core launch.
+**Status:** Done (gate passed in phase 020; human sign-off pending). Evidence: tasks/evidence/phase-007.md. **Suggested owner:** Product lead and integration engineer. **Effort:** 2–4 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [001](#phase-001) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -298,7 +312,7 @@ Inspect current Gradle, Kotlin, manifests, signing choices, permissions, SDK tar
 
 ### Phase 008 — User research brief
 
-**Status:** Done (see tasks/evidence/phase-008.md). **Suggested owner:** Product lead and integration engineer. **Effort:** 2–4 focused hours. **Release class:** Core launch.
+**Status:** Done (gate passed in phase 020; human sign-off pending). Evidence: tasks/evidence/phase-008.md. **Suggested owner:** Product lead and integration engineer. **Effort:** 2–4 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [001](#phase-001) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -318,7 +332,7 @@ Prepare interviews for customers, independent providers, older users, people arr
 
 ### Phase 009 — Launch category and locality boundaries
 
-**Status:** Done (see tasks/evidence/phase-009.md). **Suggested owner:** Product lead and integration engineer. **Effort:** 2–4 focused hours. **Release class:** Core launch.
+**Status:** Done (gate passed in phase 020; human sign-off pending). Evidence: tasks/evidence/phase-009.md. **Suggested owner:** Product lead and integration engineer. **Effort:** 2–4 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [001](#phase-001) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -338,7 +352,7 @@ Choose a small first operational slice of Mumbai while leaving the catalog data-
 
 ### Phase 010 — Outcome metrics and counter-metrics
 
-**Status:** Done (see tasks/evidence/phase-010.md). **Suggested owner:** Product lead and integration engineer. **Effort:** 2–4 focused hours. **Release class:** Core launch.
+**Status:** Done (gate passed in phase 020; human sign-off pending). Evidence: tasks/evidence/phase-010.md. **Suggested owner:** Product lead and integration engineer. **Effort:** 2–4 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [001](#phase-001) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -358,7 +372,7 @@ Define qualified discovery, intentional contact taps, provider activation, fresh
 
 ### Phase 011 — Architecture and data-flow diagram
 
-**Status:** Done (see tasks/evidence/phase-011.md). **Suggested owner:** Product lead and integration engineer. **Effort:** 2–4 focused hours. **Release class:** Core launch.
+**Status:** Done (gate passed in phase 020; human sign-off pending). Evidence: tasks/evidence/phase-011.md. **Suggested owner:** Product lead and integration engineer. **Effort:** 2–4 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [001](#phase-001) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -378,7 +392,7 @@ Map Flutter, planned Astro website, Supabase Auth/Postgres/Storage, SMS, admin t
 
 ### Phase 012 — Threat model and abuse stories
 
-**Status:** Done (see tasks/evidence/phase-012.md). **Suggested owner:** Product lead and integration engineer. **Effort:** 2–4 focused hours. **Release class:** Core launch.
+**Status:** Done (gate passed in phase 020; human sign-off pending). Evidence: tasks/evidence/phase-012.md. **Suggested owner:** Product lead and integration engineer. **Effort:** 2–4 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [001](#phase-001) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -398,7 +412,7 @@ Model account takeover, OTP pumping, impersonation, scraping, malicious uploads,
 
 ### Phase 013 — Field-level data classification
 
-**Status:** Done (see tasks/evidence/phase-013.md). **Suggested owner:** Product lead and integration engineer. **Effort:** 2–4 focused hours. **Release class:** Core launch.
+**Status:** Done (gate passed in phase 020; human sign-off pending). Evidence: tasks/evidence/phase-013.md. **Suggested owner:** Product lead and integration engineer. **Effort:** 2–4 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [001](#phase-001) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -418,7 +432,7 @@ Classify every profile, credential, consent, report, location, and engagement fi
 
 ### Phase 014 — API contract reconciliation
 
-**Status:** Done (see tasks/evidence/phase-014.md). **Suggested owner:** Product lead and integration engineer. **Effort:** 2–4 focused hours. **Release class:** Core launch.
+**Status:** Done (gate passed in phase 020; human sign-off pending). Evidence: tasks/evidence/phase-014.md. **Suggested owner:** Product lead and integration engineer. **Effort:** 2–4 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [001](#phase-001) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -438,7 +452,7 @@ Compare Dart repository signatures with SQL response shapes, enums, timestamp ha
 
 ### Phase 015 — Architecture decision records
 
-**Status:** Done (see tasks/evidence/phase-015.md). **Suggested owner:** Product lead and integration engineer. **Effort:** 2–4 focused hours. **Release class:** Core launch.
+**Status:** Done (gate passed in phase 020; human sign-off pending). Evidence: tasks/evidence/phase-015.md. **Suggested owner:** Product lead and integration engineer. **Effort:** 2–4 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [001](#phase-001) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -458,7 +472,7 @@ Record why Flutter, Supabase, the planned Astro website, and a server-side AI ga
 
 ### Phase 016 — Environment and cost worksheet
 
-**Status:** Done (see tasks/evidence/phase-016.md). **Suggested owner:** Product lead and integration engineer. **Effort:** 2–4 focused hours. **Release class:** Core launch.
+**Status:** Done (gate passed in phase 020; human sign-off pending). Evidence: tasks/evidence/phase-016.md. **Suggested owner:** Product lead and integration engineer. **Effort:** 2–4 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [001](#phase-001) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -478,7 +492,7 @@ List development, staging, and production resources, regions, access owners, ret
 
 ### Phase 017 — Release scope and feature flags
 
-**Status:** Done (see tasks/evidence/phase-017.md). **Suggested owner:** Product lead and integration engineer. **Effort:** 2–4 focused hours. **Release class:** Core launch.
+**Status:** Done (gate passed in phase 020; human sign-off pending). Evidence: tasks/evidence/phase-017.md. **Suggested owner:** Product lead and integration engineer. **Effort:** 2–4 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [001](#phase-001) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -498,7 +512,7 @@ Classify core launch, AI pilot, and optional experiments. Define server-controll
 
 ### Phase 018 — Coding-agent execution protocol
 
-**Status:** Done (see tasks/evidence/phase-018.md). **Suggested owner:** Product lead and integration engineer. **Effort:** 2–4 focused hours. **Release class:** Core launch.
+**Status:** Done (gate passed in phase 020; human sign-off pending). Evidence: tasks/evidence/phase-018.md. **Suggested owner:** Product lead and integration engineer. **Effort:** 2–4 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [001](#phase-001) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -518,7 +532,7 @@ Define bounded assignments, file ownership, integration responsibility, evidence
 
 ### Phase 019 — Capacity and risk schedule
 
-**Status:** Done (see tasks/evidence/phase-019.md). **Suggested owner:** Product lead and integration engineer. **Effort:** 2–4 focused hours. **Release class:** Core launch.
+**Status:** Done (gate passed in phase 020; human sign-off pending). Evidence: tasks/evidence/phase-019.md. **Suggested owner:** Product lead and integration engineer. **Effort:** 2–4 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [001](#phase-001) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -538,7 +552,7 @@ Estimate human engineering hours, reviewer capacity, external waits, and integra
 
 ### Phase 020 — Foundation gate and scope freeze
 
-**Status:** Done (see tasks/evidence/phase-020.md). **Suggested owner:** Product lead and integration engineer. **Effort:** 2–4 focused hours. **Release class:** Core launch.
+**Status:** Done (gate passed in phase 020; human sign-off pending). Evidence: tasks/evidence/phase-020.md. **Suggested owner:** Product lead and integration engineer. **Effort:** 2–4 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [001](#phase-001), [002](#phase-002), [003](#phase-003), [004](#phase-004), [005](#phase-005), [006](#phase-006), [007](#phase-007), [008](#phase-008), [009](#phase-009), [010](#phase-010), [011](#phase-011), [012](#phase-012), [013](#phase-013), [014](#phase-014), [015](#phase-015), [016](#phase-016), [017](#phase-017), [018](#phase-018), [019](#phase-019) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -563,7 +577,7 @@ Review the actual baseline, contracts, threats, costs, and proposed differentiat
 
 ### Phase 021 — Database object and privilege inventory
 
-**Status:** In review (see tasks/evidence/phase-021.md). **Suggested owner:** Backend and security engineer. **Effort:** 4–7 focused hours. **Release class:** Core launch.
+**Status:** Done locally (verified on PGlite; hosted-Supabase repeat blocked, human sign-off pending). Evidence: tasks/evidence/phase-021.md. **Suggested owner:** Backend and security engineer. **Effort:** 4–7 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [013](#phase-013), [014](#phase-014), [020](#phase-020) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -583,7 +597,7 @@ Enumerate tables, views, functions, triggers, exposed schemas, roles, grants, an
 
 ### Phase 022 — Explicit public profile projection
 
-**Status:** In review (see tasks/evidence/phase-022.md). **Suggested owner:** Backend and security engineer. **Effort:** 4–7 focused hours. **Release class:** Core launch.
+**Status:** Done locally (verified on PGlite; hosted-Supabase repeat blocked, human sign-off pending). Evidence: tasks/evidence/phase-022.md. **Suggested owner:** Backend and security engineer. **Effort:** 4–7 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [013](#phase-013), [014](#phase-014), [020](#phase-020), [021](#phase-021) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -603,7 +617,7 @@ Create an allowlisted public response distinct from owner data. Exclude user ide
 
 ### Phase 023 — Internal function isolation
 
-**Status:** In review (see tasks/evidence/phase-023.md). **Suggested owner:** Backend and security engineer. **Effort:** 4–7 focused hours. **Release class:** Core launch.
+**Status:** Done locally (verified on PGlite; hosted-Supabase repeat blocked, human sign-off pending). Evidence: tasks/evidence/phase-023.md. **Suggested owner:** Backend and security engineer. **Effort:** 4–7 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [013](#phase-013), [014](#phase-014), [020](#phase-020), [021](#phase-021) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -623,7 +637,7 @@ Move helpers outside exposed schemas or revoke execution from PUBLIC and client 
 
 ### Phase 024 — Definer-function hardening
 
-**Status:** In review (see tasks/evidence/phase-024.md). **Suggested owner:** Backend and security engineer. **Effort:** 4–7 focused hours. **Release class:** Core launch.
+**Status:** Done locally (verified on PGlite; hosted-Supabase repeat blocked, human sign-off pending). Evidence: tasks/evidence/phase-024.md. **Suggested owner:** Backend and security engineer. **Effort:** 4–7 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [013](#phase-013), [014](#phase-014), [020](#phase-020), [021](#phase-021) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -643,7 +657,7 @@ Audit caller validation, ownership, qualified references, safe search_path, and 
 
 ### Phase 025 — Provider row and column controls
 
-**Status:** In review (see tasks/evidence/phase-025.md). **Suggested owner:** Backend and security engineer. **Effort:** 4–7 focused hours. **Release class:** Core launch.
+**Status:** Done locally (verified on PGlite; hosted-Supabase repeat blocked, human sign-off pending). Evidence: tasks/evidence/phase-025.md. **Suggested owner:** Backend and security engineer. **Effort:** 4–7 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [013](#phase-013), [014](#phase-014), [020](#phase-020), [021](#phase-021) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -663,7 +677,7 @@ Restrict raw-table access that bypasses the approved public projection. Protect 
 
 ### Phase 026 — Concurrent identity uniqueness
 
-**Status:** In review (see tasks/evidence/phase-026.md). **Suggested owner:** Backend and security engineer. **Effort:** 4–7 focused hours. **Release class:** Core launch.
+**Status:** Done locally (verified on PGlite; hosted-Supabase repeat blocked, human sign-off pending). Evidence: tasks/evidence/phase-026.md. **Suggested owner:** Backend and security engineer. **Effort:** 4–7 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [013](#phase-013), [014](#phase-014), [020](#phase-020), [021](#phase-021) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -683,7 +697,7 @@ Verify E.164 normalization, Auth uniqueness, unique provider user_id, and phone 
 
 ### Phase 027 — Publication invariants
 
-**Status:** In review (see tasks/evidence/phase-027.md). **Suggested owner:** Backend and security engineer. **Effort:** 4–7 focused hours. **Release class:** Core launch.
+**Status:** Done locally (verified on PGlite; hosted-Supabase repeat blocked, human sign-off pending). Evidence: tasks/evidence/phase-027.md. **Suggested owner:** Backend and security engineer. **Effort:** 4–7 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [013](#phase-013), [014](#phase-014), [020](#phase-020), [021](#phase-021) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -703,7 +717,7 @@ Enforce verified identity, current consent, enabled market/category, required co
 
 ### Phase 028 — Market activation authorization
 
-**Status:** In review (see tasks/evidence/phase-028.md). **Suggested owner:** Backend and security engineer. **Effort:** 4–7 focused hours. **Release class:** Core launch.
+**Status:** Done locally (verified on PGlite; hosted-Supabase repeat blocked, human sign-off pending). Evidence: tasks/evidence/phase-028.md. **Suggested owner:** Backend and security engineer. **Effort:** 4–7 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [013](#phase-013), [014](#phase-014), [020](#phase-020), [021](#phase-021) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -723,7 +737,7 @@ Protect city and category activation with admin rights and audit reasons. Make a
 
 ### Phase 029 — Atomic profile mutations
 
-**Status:** In review (see tasks/evidence/phase-029.md). **Suggested owner:** Backend and security engineer. **Effort:** 4–7 focused hours. **Release class:** Core launch.
+**Status:** Done locally (verified on PGlite; hosted-Supabase repeat blocked, human sign-off pending). Evidence: tasks/evidence/phase-029.md. **Suggested owner:** Backend and security engineer. **Effort:** 4–7 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [013](#phase-013), [014](#phase-014), [020](#phase-020), [021](#phase-021) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -743,7 +757,7 @@ Validate complete replacement payloads before changing categories, hours, prices
 
 ### Phase 030 — Optimistic concurrency control
 
-**Status:** In review (see tasks/evidence/phase-030.md). **Suggested owner:** Backend and security engineer. **Effort:** 4–7 focused hours. **Release class:** Core launch.
+**Status:** Done locally (verified on PGlite; hosted-Supabase repeat blocked, human sign-off pending). Evidence: tasks/evidence/phase-030.md. **Suggested owner:** Backend and security engineer. **Effort:** 4–7 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [013](#phase-013), [014](#phase-014), [020](#phase-020), [021](#phase-021) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -763,7 +777,7 @@ Add a revision precondition to owner and admin edits. Return a safe conflict ins
 
 ### Phase 031 — Working-hours semantics
 
-**Status:** In review (see tasks/evidence/phase-031.md). **Suggested owner:** Backend and security engineer. **Effort:** 4–7 focused hours. **Release class:** Core launch.
+**Status:** Done locally (verified on PGlite; hosted-Supabase repeat blocked, human sign-off pending). Evidence: tasks/evidence/phase-031.md. **Suggested owner:** Backend and security engineer. **Effort:** 4–7 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [013](#phase-013), [014](#phase-014), [020](#phase-020), [021](#phase-021) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -783,7 +797,7 @@ Unify Dart and SQL handling of unknown hours, closed days, all-day service, over
 
 ### Phase 032 — Consent withdrawal propagation
 
-**Status:** In review (see tasks/evidence/phase-032.md). **Suggested owner:** Backend and security engineer. **Effort:** 4–7 focused hours. **Release class:** Core launch.
+**Status:** Done locally (verified on PGlite; hosted-Supabase repeat blocked, human sign-off pending). Evidence: tasks/evidence/phase-032.md. **Suggested owner:** Backend and security engineer. **Effort:** 4–7 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [013](#phase-013), [014](#phase-014), [020](#phase-020), [021](#phase-021) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -803,7 +817,7 @@ Define how revoking phone or WhatsApp consent changes publication and contact el
 
 ### Phase 033 — Protected anonymous writes
 
-**Status:** In review (see tasks/evidence/phase-033.md). **Suggested owner:** Backend and security engineer. **Effort:** 4–7 focused hours. **Release class:** Core launch.
+**Status:** Done locally (verified on PGlite; hosted-Supabase repeat blocked, human sign-off pending). Evidence: tasks/evidence/phase-033.md. **Suggested owner:** Backend and security engineer. **Effort:** 4–7 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [013](#phase-013), [014](#phase-014), [020](#phase-020), [021](#phase-021) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -823,7 +837,7 @@ Review guest reports, city requests, and engagement submissions. Apply input bou
 
 ### Phase 034 — Search resource bounds
 
-**Status:** In review (see tasks/evidence/phase-034.md). **Suggested owner:** Backend and security engineer. **Effort:** 4–7 focused hours. **Release class:** Core launch.
+**Status:** Done locally (verified on PGlite; hosted-Supabase repeat blocked, human sign-off pending). Evidence: tasks/evidence/phase-034.md. **Suggested owner:** Backend and security engineer. **Effort:** 4–7 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [013](#phase-013), [014](#phase-014), [020](#phase-020), [021](#phase-021) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -843,7 +857,7 @@ Cap text, filters, array lengths, pagination, sort options, and execution time b
 
 ### Phase 035 — Deletion and retained records
 
-**Status:** In review (see tasks/evidence/phase-035.md). **Suggested owner:** Backend and security engineer. **Effort:** 4–7 focused hours. **Release class:** Core launch.
+**Status:** Done locally (verified on PGlite; hosted-Supabase repeat blocked, human sign-off pending). Evidence: tasks/evidence/phase-035.md. **Suggested owner:** Backend and security engineer. **Effort:** 4–7 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [013](#phase-013), [014](#phase-014), [020](#phase-020), [021](#phase-021) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -863,7 +877,7 @@ Map account deletion across auth, profiles, blobs, evidence, reports, consent, c
 
 ### Phase 036 — Append-only privileged audit
 
-**Status:** In review (see tasks/evidence/phase-036.md). **Suggested owner:** Backend and security engineer. **Effort:** 4–7 focused hours. **Release class:** Core launch.
+**Status:** Done locally (verified on PGlite; hosted-Supabase repeat blocked, human sign-off pending). Evidence: tasks/evidence/phase-036.md. **Suggested owner:** Backend and security engineer. **Effort:** 4–7 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [013](#phase-013), [014](#phase-014), [020](#phase-020), [021](#phase-021) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -883,7 +897,7 @@ Record moderation, credential, export, deletion, and configuration decisions wit
 
 ### Phase 037 — Forward migration rehearsal
 
-**Status:** In review (see tasks/evidence/phase-037.md). **Suggested owner:** Backend and security engineer. **Effort:** 4–7 focused hours. **Release class:** Core launch.
+**Status:** Done locally (verified on PGlite; hosted-Supabase repeat blocked, human sign-off pending). Evidence: tasks/evidence/phase-037.md. **Suggested owner:** Backend and security engineer. **Effort:** 4–7 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [013](#phase-013), [014](#phase-014), [020](#phase-020), [021](#phase-021) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -903,7 +917,7 @@ Apply upgrades to a sanitized prior-version database with realistic volume. Meas
 
 ### Phase 038 — Database performance evidence
 
-**Status:** In review (see tasks/evidence/phase-038.md). **Suggested owner:** Backend and security engineer. **Effort:** 4–7 focused hours. **Release class:** Core launch.
+**Status:** Done locally (verified on PGlite; hosted-Supabase repeat blocked, human sign-off pending). Evidence: tasks/evidence/phase-038.md. **Suggested owner:** Backend and security engineer. **Effort:** 4–7 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [013](#phase-013), [014](#phase-014), [020](#phase-020), [021](#phase-021) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -923,7 +937,7 @@ Generate labeled synthetic providers and service relationships at expected and s
 
 ### Phase 039 — HTTP authorization regression pack
 
-**Status:** Blocked (see tasks/evidence/phase-039.md). **Suggested owner:** Backend and security engineer. **Effort:** 4–7 focused hours. **Release class:** Core launch.
+**Status:** Blocked (needs Docker / a Supabase project; see evidence). Evidence: tasks/evidence/phase-039.md. **Suggested owner:** Backend and security engineer. **Effort:** 4–7 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [013](#phase-013), [014](#phase-014), [020](#phase-020), [021](#phase-021) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -943,7 +957,7 @@ Probe every public endpoint with real guest, owner, other-owner, and admin token
 
 ### Phase 040 — Trusted backend gate
 
-**Status:** In review (see tasks/evidence/phase-040.md; DB layer passed locally, HTTP pack blocked). **Suggested owner:** Backend and security engineer. **Effort:** 4–7 focused hours. **Release class:** Core launch.
+**Status:** Done locally (DB layer passed; HTTP pack blocked, human sign-off pending). Evidence: tasks/evidence/phase-040.md. **Suggested owner:** Backend and security engineer. **Effort:** 4–7 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [013](#phase-013), [014](#phase-014), [020](#phase-020), [021](#phase-021), [022](#phase-022), [023](#phase-023), [024](#phase-024), [025](#phase-025), [026](#phase-026), [027](#phase-027), [028](#phase-028), [029](#phase-029), [030](#phase-030), [031](#phase-031), [032](#phase-032), [033](#phase-033), [034](#phase-034), [035](#phase-035), [036](#phase-036), [037](#phase-037), [038](#phase-038), [039](#phase-039) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -968,7 +982,7 @@ Review grants, field projection, lifecycle controls, query bounds, and platform-
 
 ### Phase 041 — Live auth repository skeleton
 
-**Status:** Not started. **Suggested owner:** Authentication and mobile engineer. **Effort:** 3–6 focused hours. **Release class:** Core launch.
+**Status:** Done locally. Evidence: `tasks/evidence/phase-041.md`. **Suggested owner:** Authentication and mobile engineer. **Effort:** 3–6 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [014](#phase-014), [020](#phase-020) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -988,7 +1002,7 @@ Implement ProviderAuthRepository with Supabase and explicit environment selectio
 
 ### Phase 042 — Phone normalization and entry
 
-**Status:** Not started. **Suggested owner:** Authentication and mobile engineer. **Effort:** 3–6 focused hours. **Release class:** Core launch.
+**Status:** Done locally. Evidence: `tasks/evidence/phase-042.md`. **Suggested owner:** Authentication and mobile engineer. **Effort:** 3–6 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [014](#phase-014), [020](#phase-020), [041](#phase-041) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -1008,7 +1022,7 @@ Review Indian mobile input, country codes, pasted separators, Unicode digits, in
 
 ### Phase 043 — SMS provider contract
 
-**Status:** Not started. **Suggested owner:** Authentication and mobile engineer. **Effort:** 3–6 focused hours. **Release class:** Core launch.
+**Status:** Done locally (SMS vendor account and DLT approval not provisioned: needs the product owner). Evidence: `tasks/evidence/phase-043.md`. **Suggested owner:** Authentication and mobile engineer. **Effort:** 3–6 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [014](#phase-014), [020](#phase-020), [041](#phase-041) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -1028,7 +1042,7 @@ Evaluate current India delivery support, DLT setup, templates, outages, and pric
 
 ### Phase 044 — OTP challenge mapping
 
-**Status:** Not started. **Suggested owner:** Authentication and mobile engineer. **Effort:** 3–6 focused hours. **Release class:** Core launch.
+**Status:** Done locally. Evidence: `tasks/evidence/phase-044.md`. **Suggested owner:** Authentication and mobile engineer. **Effort:** 3–6 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [014](#phase-014), [020](#phase-020), [041](#phase-041) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -1048,7 +1062,7 @@ Implement bounded challenge-to-phone bookkeeping required by the current interfa
 
 ### Phase 045 — Verification and replay
 
-**Status:** Not started. **Suggested owner:** Authentication and mobile engineer. **Effort:** 3–6 focused hours. **Release class:** Core launch.
+**Status:** Done locally. Evidence: `tasks/evidence/phase-045.md`. **Suggested owner:** Authentication and mobile engineer. **Effort:** 3–6 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [014](#phase-014), [020](#phase-020), [041](#phase-041) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -1068,7 +1082,7 @@ Use the server auth verifier for codes, expiration, and attempts. Map wrong-code
 
 ### Phase 046 — Resend and delayed delivery
 
-**Status:** Not started. **Suggested owner:** Authentication and mobile engineer. **Effort:** 3–6 focused hours. **Release class:** Core launch.
+**Status:** Done locally. Evidence: `tasks/evidence/phase-046.md`. **Suggested owner:** Authentication and mobile engineer. **Effort:** 3–6 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [014](#phase-014), [020](#phase-020), [041](#phase-041) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -1088,7 +1102,7 @@ Coordinate resend cooldowns with server policy, disable duplicate submits, and h
 
 ### Phase 047 — OTP pumping protection
 
-**Status:** Not started. **Suggested owner:** Authentication and mobile engineer. **Effort:** 3–6 focused hours. **Release class:** Core launch.
+**Status:** Done locally (alert delivery and hosted behaviour need a Supabase project). Evidence: `tasks/evidence/phase-047.md`. **Suggested owner:** Authentication and mobile engineer. **Effort:** 3–6 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [014](#phase-014), [020](#phase-020), [041](#phase-041) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -1108,7 +1122,7 @@ Enforce per-number, network/risk, and global spend controls at a boundary direct
 
 ### Phase 048 — Enumeration resistance
 
-**Status:** Not started. **Suggested owner:** Authentication and mobile engineer. **Effort:** 3–6 focused hours. **Release class:** Core launch.
+**Status:** Done locally. Evidence: `tasks/evidence/phase-048.md`. **Suggested owner:** Authentication and mobile engineer. **Effort:** 3–6 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [014](#phase-014), [020](#phase-020), [041](#phase-041) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -1128,7 +1142,7 @@ Compare unverified responses and timing for new, existing, suspended, and delete
 
 ### Phase 049 — Secure session persistence
 
-**Status:** Not started. **Suggested owner:** Authentication and mobile engineer. **Effort:** 3–6 focused hours. **Release class:** Core launch.
+**Status:** Done locally (on-device Keystore behaviour unverified). Evidence: `tasks/evidence/phase-049.md`. **Suggested owner:** Authentication and mobile engineer. **Effort:** 3–6 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [014](#phase-014), [020](#phase-020), [041](#phase-041) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -1148,7 +1162,7 @@ Evaluate SDK defaults and platform-backed Android storage for tokens. Separate s
 
 ### Phase 050 — Refresh and revocation
 
-**Status:** Not started. **Suggested owner:** Authentication and mobile engineer. **Effort:** 3–6 focused hours. **Release class:** Core launch.
+**Status:** Done locally. Evidence: `tasks/evidence/phase-050.md`. **Suggested owner:** Authentication and mobile engineer. **Effort:** 3–6 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [014](#phase-014), [020](#phase-020), [041](#phase-041) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -1168,7 +1182,7 @@ Handle expired access tokens, concurrent refresh, revoked sessions, offline reco
 
 ### Phase 051 — Owner-state restoration
 
-**Status:** Not started. **Suggested owner:** Authentication and mobile engineer. **Effort:** 3–6 focused hours. **Release class:** Core launch.
+**Status:** Done locally. Evidence: `tasks/evidence/phase-051.md`. **Suggested owner:** Authentication and mobile engineer. **Effort:** 3–6 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [014](#phase-014), [020](#phase-020), [041](#phase-041) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -1188,7 +1202,7 @@ Fetch current server ownership when restoring a session. Route new, published, p
 
 ### Phase 052 — Verified phone change
 
-**Status:** Not started. **Suggested owner:** Authentication and mobile engineer. **Effort:** 3–6 focused hours. **Release class:** Core launch.
+**Status:** Done locally (real GoTrue phone-change flow unexecuted). Evidence: `tasks/evidence/phase-052.md`. **Suggested owner:** Authentication and mobile engineer. **Effort:** 3–6 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [014](#phase-014), [020](#phase-020), [041](#phase-041) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -1208,7 +1222,7 @@ Require appropriate recent authentication and verification of the replacement nu
 
 ### Phase 053 — SIM-loss recovery workflow
 
-**Status:** Not started. **Suggested owner:** Authentication and mobile engineer. **Effort:** 3–6 focused hours. **Release class:** Core launch.
+**Status:** Done locally (real GoTrue identities behaviour unverified; no support console). Evidence: `tasks/evidence/phase-053.md`. **Suggested owner:** Authentication and mobile engineer. **Effort:** 3–6 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [014](#phase-014), [020](#phase-020), [041](#phase-041) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -1228,7 +1242,7 @@ Create a support-assisted recovery case with minimal evidence, fraud review, and
 
 ### Phase 054 — Administrator MFA and roles
 
-**Status:** Not started. **Suggested owner:** Authentication and mobile engineer. **Effort:** 3–6 focused hours. **Release class:** Core launch.
+**Status:** Done locally (hosted MFA claims unverified). Evidence: `tasks/evidence/phase-054.md`. **Suggested owner:** Authentication and mobile engineer. **Effort:** 3–6 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [014](#phase-014), [020](#phase-020), [041](#phase-041) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -1248,7 +1262,7 @@ Require platform-supported MFA for privileged access and separate support, moder
 
 ### Phase 055 — Sensitive-action reauthentication
 
-**Status:** Not started. **Suggested owner:** Authentication and mobile engineer. **Effort:** 3–6 focused hours. **Release class:** Core launch.
+**Status:** Done locally. Evidence: `tasks/evidence/phase-055.md`. **Suggested owner:** Authentication and mobile engineer. **Effort:** 3–6 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [014](#phase-014), [020](#phase-020), [041](#phase-041) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -1268,7 +1282,7 @@ Enforce recent authentication server-side for deletion, phone changes, private e
 
 ### Phase 056 — Reviewer access without backdoors
 
-**Status:** Not started. **Suggested owner:** Authentication and mobile engineer. **Effort:** 3–6 focused hours. **Release class:** Core launch.
+**Status:** Done locally (staging reviewer environment needs a Supabase staging project). Evidence: `tasks/evidence/phase-056.md`. **Suggested owner:** Authentication and mobile engineer. **Effort:** 3–6 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [014](#phase-014), [020](#phase-020), [041](#phase-041) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -1288,7 +1302,7 @@ Prepare minimally privileged review access isolated from real providers. Do not 
 
 ### Phase 057 — Deletion request endpoint
 
-**Status:** Not started. **Suggested owner:** Authentication and mobile engineer. **Effort:** 3–6 focused hours. **Release class:** Core launch.
+**Status:** Done locally (Edge Function unexecuted on a real project). Evidence: `tasks/evidence/phase-057.md`. **Suggested owner:** Authentication and mobile engineer. **Effort:** 3–6 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [014](#phase-014), [020](#phase-020), [035](#phase-035), [041](#phase-041) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -1308,7 +1322,7 @@ Harden delete-account with verified caller identity, recent auth, stable safe er
 
 ### Phase 058 — Accessible localized verification
 
-**Status:** Not started. **Suggested owner:** Authentication and mobile engineer. **Effort:** 3–6 focused hours. **Release class:** Core launch.
+**Status:** Done locally (TalkBack on a device not run; Hindi/Marathi copy needs native review). Evidence: `tasks/evidence/phase-058.md`. **Suggested owner:** Authentication and mobile engineer. **Effort:** 3–6 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [014](#phase-014), [020](#phase-020), [041](#phase-041) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -1328,7 +1342,7 @@ Test TalkBack, large fonts, paste, keyboard navigation, slow SMS, and Hindi/Mara
 
 ### Phase 059 — Authentication stress scenarios
 
-**Status:** Not started. **Suggested owner:** Authentication and mobile engineer. **Effort:** 3–6 focused hours. **Release class:** Core launch.
+**Status:** Done locally. Evidence: `tasks/evidence/phase-059.md`. **Suggested owner:** Authentication and mobile engineer. **Effort:** 3–6 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [014](#phase-014), [020](#phase-020), [041](#phase-041) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 
@@ -1348,7 +1362,7 @@ Exercise concurrent sign-ins, logout during refresh, account switching during up
 
 ### Phase 060 — Identity readiness gate
 
-**Status:** Not started. **Suggested owner:** Authentication and mobile engineer. **Effort:** 3–6 focused hours. **Release class:** Core launch.
+**Status:** Done locally; staging verification NOT performed (blocked: Supabase staging project, SMS vendor/DLT, Docker). Production registration stays closed. Evidence: `tasks/evidence/phase-060.md`. **Suggested owner:** Authentication and mobile engineer. **Effort:** 3–6 focused hours. **Release class:** Core launch.
 
 **Prerequisites:** [014](#phase-014), [020](#phase-020), [041](#phase-041), [042](#phase-042), [043](#phase-043), [044](#phase-044), [045](#phase-045), [046](#phase-046), [047](#phase-047), [048](#phase-048), [049](#phase-049), [050](#phase-050), [051](#phase-051), [052](#phase-052), [053](#phase-053), [054](#phase-054), [055](#phase-055), [056](#phase-056), [057](#phase-057), [058](#phase-058), [059](#phase-059) Verify their evidence before dependent implementation; existing functionality may be reused only after validation.
 

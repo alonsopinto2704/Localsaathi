@@ -48,6 +48,9 @@ dependencies:
   supabase_flutter: ^2.18.0
 
   cupertino_icons: ^1.0.8
+  # Platform-backed (Android Keystore) storage for the auth session; the SDK
+  # default is plain SharedPreferences. Phase 049.
+  flutter_secure_storage: ^10.3.4
 
 dev_dependencies:
   flutter_test:

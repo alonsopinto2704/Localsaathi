@@ -2,6 +2,7 @@
 begin;
 select plan(9);
 select tests.ensure_reference_data();
+select tests.set_flag('precise_location', true);
 
 create temporary table fx (key text primary key, value text);
 select tests.share_fixture('fx');

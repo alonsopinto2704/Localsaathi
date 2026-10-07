@@ -10,8 +10,10 @@ import '../seed/category_seed.dart';
 class MockServiceCatalogRepository implements ServiceCatalogRepository {
   static final List<ServiceGroup> _groups = List<ServiceGroup>.unmodifiable(
     (List<ServiceGroup>.from(CategorySeed.groups))
-      ..sort((ServiceGroup a, ServiceGroup b) =>
-          a.sortOrder.compareTo(b.sortOrder)),
+      ..sort(
+        (ServiceGroup a, ServiceGroup b) =>
+            a.sortOrder.compareTo(b.sortOrder),
+      ),
   );
 
   static final Map<String, ServiceGroup> _groupsById = <String, ServiceGroup>{
@@ -93,9 +95,9 @@ class MockServiceCatalogRepository implements ServiceCatalogRepository {
   @override
   Future<List<ServiceCategory>> searchCategories(String query) async {
     final String needle = query.trim().toLowerCase();
-    if (needle.isEmpty) return _categories;
+    if (needle.isEmpty) return _launchCategories;
 
-    final List<ServiceCategory> matches = _categories.where((
+    final List<ServiceCategory> matches = _launchCategories.where((
       ServiceCategory category,
     ) {
       if (category.name.toLowerCase().contains(needle)) return true;

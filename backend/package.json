@@ -3,7 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node scripts/verify-db.mjs"
+    "test": "node scripts/verify-db.mjs && node --test \"test/**/*.test.mjs\"",
+    "test:db": "node scripts/verify-db.mjs",
+    "test:unit": "node --test \"test/**/*.test.mjs\""
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.5.8",

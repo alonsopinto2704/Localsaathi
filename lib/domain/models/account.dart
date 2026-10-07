@@ -41,6 +41,7 @@ class ProviderAccount {
   ProviderAccount copyWith({
     String? phoneE164,
     String? profileId,
+    bool clearProfileId = false,
     DateTime? phoneVerifiedAt,
     DateTime? lastSignedInAt,
     bool? isSuspended,
@@ -50,7 +51,7 @@ class ProviderAccount {
         id: id,
         phoneE164: phoneE164 ?? this.phoneE164,
         createdAt: createdAt,
-        profileId: profileId ?? this.profileId,
+        profileId: clearProfileId ? null : (profileId ?? this.profileId),
         phoneVerifiedAt: phoneVerifiedAt ?? this.phoneVerifiedAt,
         lastSignedInAt: lastSignedInAt ?? this.lastSignedInAt,
         isSuspended: isSuspended ?? this.isSuspended,
@@ -98,11 +99,12 @@ class ProviderSession {
   final DateTime signedInAt;
   final String? profileId;
 
-  ProviderSession copyWith({String? profileId}) => ProviderSession(
+  ProviderSession copyWith({String? profileId, bool clearProfileId = false}) =>
+      ProviderSession(
         accountId: accountId,
         phoneE164: phoneE164,
         signedInAt: signedInAt,
-        profileId: profileId ?? this.profileId,
+        profileId: clearProfileId ? null : (profileId ?? this.profileId),
       );
 
   Map<String, dynamic> toJson() => <String, dynamic>{
@@ -214,6 +216,13 @@ enum RepositoryErrorCode {
   categoryNotAllowed,
   suspended,
   conflict,
+
+  /// The action needs a recent sign-in; the caller must re-verify first.
+  reauthRequired,
+
+  /// The backend could not be reached or failed; the outcome is unknown and
+  /// nothing may be assumed to have succeeded.
+  unavailable,
 }
 
 /// Result of attempting to start provider registration/sign-in with a number.

@@ -53,7 +53,7 @@ select throws_like(
   '%not_owner:%', 'a non-admin cannot change category approval');
 reset role;
 
-select tests.authenticate_as((select value::uuid from fx where key = 'admin'));
+select tests.authenticate_as_admin((select value::uuid from fx where key = 'admin'));
 select throws_like(
   $sql$ select public.set_city_launch_status('test-active-city', 'coming_soon', '') $sql$,
   '%validation_failed:%', 'an empty reason is rejected');
@@ -80,7 +80,7 @@ select is(
 reset role;
 
 -- Back to active, then un-approve the only category.
-select tests.authenticate_as((select value::uuid from fx where key = 'admin'));
+select tests.authenticate_as_admin((select value::uuid from fx where key = 'admin'));
 select public.set_city_launch_status('test-active-city', 'active', 'reopen market for test');
 reset role;
 select tests.authenticate_as_anon();
@@ -88,7 +88,7 @@ select is(tests.vis((select value::uuid from fx where key = 'a'), (select value:
   (select visible from expect), 'reactivating the city restores visibility');
 reset role;
 
-select tests.authenticate_as((select value::uuid from fx where key = 'admin'));
+select tests.authenticate_as_admin((select value::uuid from fx where key = 'admin'));
 select public.set_category_launch_approval('test-category-plumbing', false, 'category not ready');
 reset role;
 select tests.authenticate_as_anon();

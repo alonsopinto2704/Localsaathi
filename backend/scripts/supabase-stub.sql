@@ -75,6 +75,15 @@ create table auth.users (
 alter table auth.users owner to supabase_auth_admin;
 -- No grant to anon/authenticated: they cannot read auth.users.
 
+-- GoTrue's sessions table (only the columns this repo touches). Refresh tokens
+-- reference it with ON DELETE CASCADE in the real schema.
+create table auth.sessions (
+  id uuid not null primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  created_at timestamptz default now()
+);
+alter table auth.sessions owner to supabase_auth_admin;
+
 -- Same definitions Supabase ships: PostgREST sets request.jwt.claims (and
 -- older versions request.jwt.claim.*) from the verified JWT of each request.
 create function auth.uid() returns uuid language sql stable as $$

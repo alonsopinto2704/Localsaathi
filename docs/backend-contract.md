@@ -13,7 +13,7 @@ Status key used throughout this document:
   described. Migration `0013` revoked the grants; the call now fails over
   HTTP. Each is marked **REMOVED** below with its replacement RPC.
 
-**Hardening revision (migrations `0013`-`0022`, phases 021-040 and the 2026-10-07 audit follow-ups).** Every
+**Hardening revision (migrations `0013`-`0023`, plus the identity set `0024`-`0029` described in section 3.0, phases 021-040 and the 2026-10-07 audit follow-ups).** Every
 client write to provider data and every guest submission now goes through an
 owner-checked or rate-limited `SECURITY DEFINER` RPC. Tables and functions are
 closed by default (`0013`); a client can only call what is listed in this
@@ -120,11 +120,31 @@ map to the same `register_profile()` RPC server-side — there is one creation
 path in the backend regardless of which Dart method a screen calls. No
 duplication, no interface change.
 
+### 3.0 Identity controls (migrations 0024-0029, phases 041-060)
+
+Live implementation: `lib/data/supabase/` (`SupabaseProviderAuthRepository`
+over an `AuthGateway`; chosen by `LS_ENV=demo|staging|production`, fail-closed
+when `SUPABASE_URL`/`SUPABASE_ANON_KEY` are missing in a non-demo build).
+Behaviours the client now relies on:
+
+| Area | Contract |
+|---|---|
+| Code delivery | Auth's Send SMS hook (`send-sms-hook`) calls `public.otp_send_gate(phone)` first: only `+91` mobiles, per-number, per-10,000-block and global limits, circuit breaker. Service role only. |
+| `my_account()` | `phoneE164` is always E.164 with `+` (was GoTrue's `+`-less form until 0024). |
+| Recent authentication | `public.request_sensitive_action(action)` (`phone_change`, `delete_account`, `export_private_evidence`) succeeds only if the token's `amr` shows an SMS/TOTP proof within 5 minutes, else `reauth_required:`. A grant lasts 10 minutes and is single use. |
+| Phone change | Starting a change is blocked by an `auth.users` trigger unless a `phone_change` grant exists. When it commits, the profile keeps its owner, `phone_display_consented`/`whatsapp_enabled` reset, a published listing pauses, consent rows for the new number are written, and `phone_changed` is audited (no numbers). |
+| Administrators | `is_admin()` = `app_admins` row + a role in `private.admin_roles` + `aal2`. Roles: `support`, `moderation`, `credential_review`, `infrastructure`. Sensitive admin RPCs also need a TOTP proof under 15 minutes old. |
+| Recovery | `open_recovery_case`, `my_recovery_notices`, `dispute_recovery_case` (authenticated); `admin_recovery_queue`, `admin_review_recovery_case`, `admin_execute_recovery` (support role). 7-day wait, owner dispute freezes. |
+| Deletion | `delete-account` Edge Function: body is `{idempotencyKey}` only; 403 `reauth_required`, 401 `not_authenticated`, 502 `delete_failed`; one job per user (`private.deletion_jobs`). |
+| New error prefix | `reauth_required:` -> `RepositoryErrorCode.reauthRequired`; transport/5xx -> `RepositoryErrorCode.unavailable` (client-side only). |
+
+Operations: `docs/identity-operations.md`. SMS vendor: `docs/sms-provider-evaluation.md`.
+
 ### 3.2 Local development without a real SMS provider
 
 `supabase start`'s local Auth server intercepts outgoing OTPs instead of
 sending real SMS (see CLI logs / `supabase/config.toml`'s
-`[auth.sms.test_otp]`). No SMS account, no cost, no production credentials —
+a local-only `[auth.sms.test_otp]` block that is deliberately **not** in the committed `config.toml` — see `config.local-test-otp.toml.example`). No SMS account, no cost, no production credentials —
 satisfying "proceed with local development work without requiring paid
 services or production credentials" for this whole area.
 
@@ -299,7 +319,7 @@ fallback, the RPCs above are the contract. `phone_e164` and
 | Publish / pause / draft (`publish`, `setListingStatus`) | `rpc('set_listing_status', {p_profile_id, p_status, p_expected_revision})` | `p_expected_revision` optional (same conflict rule). Publication rules run in the row trigger (consent, display name, verified phone, active city, approved category, service area, not suspended) and stamp `published_at`. **REMOVED:** `.from('provider_profiles').update({status})`. |
 | Availability (`setAvailability`) | `rpc('set_availability', {p_profile_id, p_availability})` | **REMOVED:** direct `.update({availability})`. |
 | Delete (`deleteListing`) | `rpc('delete_listing', {p_profile_id})` | **REMOVED:** direct `.delete()`. See §4.6. |
-| Add a photo | upload to Storage bucket `provider-photos` at `{auth.uid()}/{filename}` (`[A-Za-z0-9._-]`, <=100 chars), **then** `rpc('add_provider_photo', {p_profile_id, p_storage_path, p_caption})` | the path must be in the caller's own folder; no client URL is stored (build the public URL from `storagePath`); caption <=140; max 5 photos. **REMOVED:** inserting `provider_photos` rows. |
+| Add a photo | upload to Storage bucket `provider-photos` at `{profile_id}/{filename}` (`[A-Za-z0-9._-]`, <=100 chars), **then** `rpc('add_provider_photo', {p_profile_id, p_storage_path, p_caption})` | the path must be in the profile's own folder (`<profile_id>/`, since 0022); no client URL is stored (build the public URL from `storagePath`); caption <=140; max 5 photos. **REMOVED:** inserting `provider_photos` rows. |
 | Remove a photo | `rpc('delete_provider_photo', {p_photo_id})`, then delete the Storage object | **REMOVED:** direct row delete. |
 | Map pin on/off | `rpc('set_map_location', {p_profile_id, p_lat, p_lng})` | owner-only; nulls withdraw it and record a `show_map_location` consent row. |
 | Accept Terms | `rpc('record_terms_acceptance', {p_profile_id, p_version})` right after `register_profile` | records a `terms_accepted` consent row. |
@@ -475,13 +495,14 @@ the client-facing codes in
 | `location_not_active:` | `RepositoryErrorCode.locationNotActive` | `LOCATION_NOT_ACTIVE` | register, publish |
 | `listing_not_publishable:` | `RepositoryErrorCode.listingNotPublishable` | `LISTING_NOT_PUBLISHABLE` | publish without phone display consent |
 | `consent_required:` | *(none yet: propose `RepositoryErrorCode.consentRequired`)* | `CONSENT_REQUIRED` | enabling WhatsApp without phone-display consent |
+| `reauth_required:` | `RepositoryErrorCode.reauthRequired` | *(not in the fixture file yet)* | `request_sensitive_action`, phone-change trigger, administrator RPCs without a fresh MFA proof |
 | `rate_limited:` | *(none yet: propose `RepositoryErrorCode.rateLimited`)* | `RATE_LIMITED` | `submit_report`, `request_city` |
+| `feature_disabled:` | *(none yet: propose `RepositoryErrorCode.featureDisabled`)* | `FEATURE_DISABLED` | any write or read behind a kill switch (`sponsored_placement`, `healthcare_listings`, `precise_location`, `media_intake`, ...) |
 | `suspended:` | `RepositoryErrorCode.suspended` | `SUSPENDED` | publishing a suspended listing |
 | `category_not_allowed:` | `RepositoryErrorCode.categoryNotAllowed` | `CATEGORY_NOT_ALLOWED` | **not raised today**: unknown categories are `validation_failed: unknown category`. |
 
 **Mismatches with `error-codes.json` (that file is not edited here):**
-- `CONSENT_REQUIRED` and `RATE_LIMITED` say `implementedInSql: false`; both
-  are now raised (`0015`, `0018`).
+- Fixed in `error-codes.json`: `CONSENT_REQUIRED` and `RATE_LIMITED` are `implementedInSql: true`.
 - `LOCATION_NOT_ACTIVE` says it is enforced "only in register_profile"; it is
   now also enforced by the publish trigger (`0015`).
 - `CATEGORY_NOT_ALLOWED` is still not implemented (`validation_failed`
@@ -609,3 +630,9 @@ only. `phoneE164` is shown because this listing has consented.)
 | Admin | moderation / market / category | `rpc('set_listing_moderation', ...)` (reason required to suspend), `rpc('set_city_launch_status', ...)`, `rpc('set_category_launch_approval', ...)` |
 | Admin | audit trail | `rpc('admin_audit_events', {p_limit, p_before_id})` |
 | Credentials | `CredentialRepository.forProvider/.saveClaimed/.remove` | plain `SELECT`/`.insert()`/`.delete()` on `credential_records` (still direct; claim columns only, status forced `pending`) |
+
+## Feature-flag RPCs (0022, 0023)
+
+- `flag_enabled(p_key)` and `get_client_flags()`: callable by `anon` and `authenticated`.
+- `set_feature_flag(p_key, p_enabled, p_reason)`: admin only, audited.
+- 0023: `search_providers` sponsor boost, `public_profile_json` (`healthcareDetails`, `mapLocation`) and `delete_provider_photo` now honour their flags.

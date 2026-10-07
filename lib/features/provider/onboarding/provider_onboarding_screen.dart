@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -54,6 +56,7 @@ enum _Step {
 class _ProviderOnboardingScreenState extends State<ProviderOnboardingScreen> {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _otpController = TextEditingController();
+  Timer? _resendTicker;
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _qualificationController =
@@ -150,6 +153,7 @@ class _ProviderOnboardingScreenState extends State<ProviderOnboardingScreen> {
 
   @override
   void dispose() {
+    _resendTicker?.cancel();
     _phoneController.dispose();
     _otpController.dispose();
     _nameController.dispose();
@@ -253,9 +257,27 @@ class _ProviderOnboardingScreenState extends State<ProviderOnboardingScreen> {
     _signInState
       ..isBusy = false
       ..phase = ok ? SignInPhase.otp : SignInPhase.phone
-      ..pendingPhonePretty = _session.pendingPhonePretty;
+      ..pendingPhonePretty = _session.pendingPhonePretty
+      ..resendAvailableAt = _resendAt();
     _signInState.notify();
+    _startResendTicker();
     if (!ok) _showError();
+  }
+
+  DateTime? _resendAt() {
+    final int wait = _session.resendWaitSeconds;
+    return wait > 0 ? DateTime.now().add(Duration(seconds: wait)) : null;
+  }
+
+  /// Repaints the countdown once a second while it is running. The server
+  /// enforces the real limit; this only keeps the visible wait honest.
+  void _startResendTicker() {
+    _resendTicker?.cancel();
+    if (_signInState.resendSecondsLeft == 0) return;
+    _resendTicker = Timer.periodic(const Duration(seconds: 1), (Timer t) {
+      if (!mounted || _signInState.resendSecondsLeft == 0) t.cancel();
+      if (mounted) _signInState.notify();
+    });
   }
 
   Future<void> _verifyCode() async {
@@ -288,14 +310,18 @@ class _ProviderOnboardingScreenState extends State<ProviderOnboardingScreen> {
     final bool ok = await _session.resendCode();
     _signInState
       ..isBusy = false
-      ..pendingPhonePretty = _session.pendingPhonePretty;
+      ..pendingPhonePretty = _session.pendingPhonePretty
+      ..resendAvailableAt = _resendAt();
     _signInState.notify();
+    _startResendTicker();
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(ok ? context.strings.otpResent : context.strings.otpInvalid),
-      ),
-    );
+    if (ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.strings.otpResent)),
+      );
+    } else {
+      _showError();
+    }
   }
 
   void _changeNumber() {
@@ -315,6 +341,9 @@ class _ProviderOnboardingScreenState extends State<ProviderOnboardingScreen> {
       'otpInvalid' => strings.otpInvalid,
       'otpExpired' => strings.otpExpired,
       'otpAttemptsExceeded' => strings.otpAttemptsExceeded,
+      'otpRateLimited' => strings.otpRateLimited,
+      'reauthRequired' => strings.reauthRequired,
+      'sessionExpired' => strings.sessionExpired,
       'invalidPhoneNumber' => strings.invalidPhoneNumber,
       'duplicateNumberMessage' => strings.duplicateNumberMessage,
       'fieldRequired' => strings.fieldRequired,

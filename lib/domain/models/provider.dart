@@ -247,6 +247,7 @@ class ProviderPhoto {
         'caption': caption,
         'isPlaceholder': isPlaceholder,
         if (imageBase64 != null) 'image': imageBase64,
+        if (remoteUrl != null) 'remoteUrl': remoteUrl,
         if (uploadedAt != null) 'uploadedAt': uploadedAt!.toIso8601String(),
       };
 
@@ -255,6 +256,7 @@ class ProviderPhoto {
         caption: (json['caption'] as String?) ?? '',
         isPlaceholder: (json['isPlaceholder'] as bool?) ?? false,
         imageBase64: json['image'] as String?,
+        remoteUrl: json['remoteUrl'] as String?,
         uploadedAt: DateTime.tryParse((json['uploadedAt'] as String?) ?? ''),
       );
 }
@@ -817,8 +819,10 @@ class ProviderProfile {
   /// package. Returns null for anything unrecognised.
   static T? _enumByName<T extends Enum>(List<T> values, Object? name) {
     if (name is! String) return null;
+    // Accepts camelCase (local JSON) and snake_case (Postgres wire tokens).
+    final String wanted = name.replaceAll('_', '').toLowerCase();
     for (final T value in values) {
-      if (value.name == name) return value;
+      if (value.name.toLowerCase() == wanted) return value;
     }
     return null;
   }

@@ -539,8 +539,10 @@ class EngagementSummary {
 /// Shared tolerant enum parser for the hand-written JSON codecs above.
 T _enumOr<T extends Enum>(List<T> values, Object? name, T fallback) {
   if (name is String) {
+    // Accepts camelCase (local JSON) and snake_case (Postgres wire tokens).
+    final String wanted = name.replaceAll('_', '').toLowerCase();
     for (final T value in values) {
-      if (value.name == name) return value;
+      if (value.name.toLowerCase() == wanted) return value;
     }
   }
   return fallback;

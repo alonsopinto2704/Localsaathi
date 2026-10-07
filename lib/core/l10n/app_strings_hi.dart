@@ -164,6 +164,28 @@ class AppStringsHi extends AppStrings {
   @override
   String get resendOtp => 'कोड फिर भेजें';
   @override
+  String get otpRateLimited =>
+      'बहुत ज़्यादा कोड माँगे गए। कृपया दोबारा माँगने से पहले थोड़ा इंतज़ार करें।';
+  @override
+  String otpResendInTemplate(int seconds) =>
+      'आप $seconds सेकंड में नया कोड माँग सकते हैं।';
+  @override
+  String get otpResendWaitingLabel => 'थोड़ी देर बाद कोड फिर भेजा जा सकेगा';
+  @override
+  String get otpDelayedHelp =>
+      'SMS से कोड आने में कुछ मिनट लग सकते हैं। यह स्क्रीन खुली रखें; इंतज़ार ख़त्म होने पर आप नया कोड माँग सकते हैं।';
+  @override
+  String get otpPasteHint => '6 अंकों का कोड लिखें या पेस्ट करें।';
+  @override
+  String get reauthRequired =>
+      'आपकी सुरक्षा के लिए, यह करने से पहले नए कोड से पुष्टि करें।';
+  @override
+  String get sessionExpired =>
+      'आप साइन आउट हो गए हैं। जारी रखने के लिए फिर साइन इन करें; आपका ड्राफ़्ट सुरक्षित है।';
+  @override
+  String get listingSuspendedNotice =>
+      'यह लिस्टिंग निलंबित है। आप साइन इन कर सकते हैं, लेकिन समीक्षा तक इसे प्रकाशित नहीं किया जा सकता।';
+  @override
   String get otpLabel => 'वन-टाइम कोड';
   @override
   String get duplicateNumberMessage =>

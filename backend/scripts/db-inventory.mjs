@@ -31,7 +31,7 @@ for (const f of fns) {
 }
 
 const tables = await q(`
-  select n.nspname as schema, c.relname || case c.relkind when 'v' then ' (view)' else '' end as name, c.relrowsecurity as rls
+  select n.nspname as schema, c.relname as rel, c.relname || case c.relkind when 'v' then ' (view)' else '' end as name, c.relrowsecurity as rls
   from pg_class c join pg_namespace n on n.oid = c.relnamespace
   where n.nspname in ('public', 'private', 'storage') and c.relkind in ('r', 'v')
   order by 1, 2`);
@@ -39,15 +39,15 @@ console.log(`\n## Tables (${tables.length})\n`);
 console.log('| table | RLS | anon | authenticated | policies (cmd: roles) |');
 console.log('|---|---|---|---|---|');
 for (const t of tables) {
-  const fq = `${t.schema}.${t.name}`;
+  const fq = `${t.schema}.${t.rel}`; // the display name may carry a ' (view)' suffix
   const privs = async (role) => {
     const r = await q(`select string_agg(p, '') as s from (values ('S','SELECT'),('I','INSERT'),('U','UPDATE'),('D','DELETE')) v(p, priv)
       where has_table_privilege('${role}', '${fq}', priv)`);
     return r[0].s || '·';
   };
-  const pols = await q(`select cmd, array_to_string(roles, ',') as roles from pg_policies where schemaname = '${t.schema}' and tablename = '${t.name}' order by cmd`);
+  const pols = await q(`select cmd, array_to_string(roles, ',') as roles from pg_policies where schemaname = '${t.schema}' and tablename = '${t.rel}' order by cmd`);
   const polText = pols.map((p) => `${p.cmd}:${p.roles}`).join('; ') || '—';
-  console.log(`| \`${fq}\` | ${yes(t.rls)} | ${await privs('anon')} | ${await privs('authenticated')} | ${polText} |`);
+  console.log(`| \`${t.schema}.${t.name}\` | ${yes(t.rls)} | ${await privs('anon')} | ${await privs('authenticated')} | ${polText} |`);
 }
 
 const defaults = await q(`

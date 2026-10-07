@@ -135,8 +135,10 @@ begin
   if v_admin is null then
     v_admin := tests.create_phone_user('+919000000999');
     insert into public.app_admins (user_id) values (v_admin);
+    insert into private.admin_roles (user_id, role) values (v_admin, 'moderation');
   end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', v_admin, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('sub', v_admin, 'role', 'authenticated', 'aal', 'aal2',
+    'amr', json_build_array(json_build_object('method', 'totp', 'timestamp', (extract(epoch from now()) - 30)::bigint)))::text, true);
   update public.provider_profiles
     set moderation_status = p_moderation_status, suspension_reason = p_reason
     where id = p_provider_id;
@@ -161,7 +163,7 @@ $$;
 -- stopped new functions being executable by PUBLIC, so grant them -- the
 -- tests schema never exists outside the test database.
 grant usage on schema tests to anon, authenticated;
-grant execute on all functions in schema tests to anon, authenticated;
+grant execute on all functions in schema tests to anon, authenticated, service_role;
 
 -- Added for suites 0006-0013: a user who is also a row in app_admins. Call it
 -- as the superuser, then authenticate_as(<returned id>) to act as the admin.
@@ -173,6 +175,8 @@ declare
   v_id uuid := tests.create_phone_user(p_phone);
 begin
   insert into public.app_admins (user_id) values (v_id);
+  insert into private.admin_roles (user_id, role)
+    select v_id, r from unnest(array['support', 'moderation', 'credential_review', 'infrastructure']) r;
   return v_id;
 end;
 $$;
@@ -187,3 +191,43 @@ as $$
   insert into public.feature_flags (key, enabled, reason) values (p_key, p_enabled, 'test')
   on conflict (key) do update set enabled = excluded.enabled;
 $$;
+
+-- Identity-phase helpers (migrations 0024+). Test-only.
+-- Authenticated caller whose token shows a factor proof `p_age_seconds` ago,
+-- the way Supabase Auth stamps `amr` after an SMS-code or TOTP sign-in.
+create or replace function tests.authenticate_with_amr(
+  p_user_id uuid, p_age_seconds int default 30, p_aal text default 'aal1', p_method text default 'otp'
+)
+returns void
+language plpgsql
+as $$
+begin
+  perform set_config('request.jwt.claims', json_build_object(
+    'sub', p_user_id, 'role', 'authenticated', 'aal', p_aal,
+    'amr', json_build_array(json_build_object('method', p_method, 'timestamp', (extract(epoch from now()) - p_age_seconds)::bigint))
+  )::text, true);
+  perform set_config('role', 'authenticated', true);
+end;
+$$;
+
+-- Issues a sensitive-action grant directly (what request_sensitive_action does
+-- once the recency check passes) so other suites can drive GoTrue-style updates.
+create or replace function tests.allow_sensitive_action(p_user_id uuid, p_action text)
+returns void
+language sql
+as $$
+  insert into private.sensitive_grants (user_id, action, expires_at)
+  values (p_user_id, p_action, now() + interval '10 minutes');
+$$;
+
+grant execute on function tests.authenticate_with_amr(uuid, int, text, text), tests.allow_sensitive_action(uuid, text)
+  to anon, authenticated;
+
+-- An administrator's MFA session: aal2 with a TOTP proof `p_age_seconds` old.
+create or replace function tests.authenticate_as_admin(p_user_id uuid, p_age_seconds int default 30)
+returns void
+language sql
+as $$
+  select tests.authenticate_with_amr(p_user_id, p_age_seconds, 'aal2', 'totp');
+$$;
+grant execute on function tests.authenticate_as_admin(uuid, int) to anon, authenticated, service_role;

@@ -163,6 +163,28 @@ class AppStringsMr extends AppStrings {
   @override
   String get resendOtp => 'कोड पुन्हा पाठवा';
   @override
+  String get otpRateLimited =>
+      'खूप जास्त कोड मागवले गेले. पुन्हा मागण्यापूर्वी थोडा वेळ थांबा.';
+  @override
+  String otpResendInTemplate(int seconds) =>
+      'तुम्ही $seconds सेकंदांत नवीन कोड मागू शकता.';
+  @override
+  String get otpResendWaitingLabel => 'थोड्या वेळाने कोड पुन्हा पाठवता येईल';
+  @override
+  String get otpDelayedHelp =>
+      'SMS द्वारे कोड येण्यास काही मिनिटे लागू शकतात. ही स्क्रीन उघडी ठेवा; प्रतीक्षा संपल्यावर नवीन कोड मागू शकता.';
+  @override
+  String get otpPasteHint => '6 अंकी कोड टाइप करा किंवा पेस्ट करा.';
+  @override
+  String get reauthRequired =>
+      'तुमच्या सुरक्षिततेसाठी, हे करण्यापूर्वी नवीन कोडने खात्री करा.';
+  @override
+  String get sessionExpired =>
+      'तुम्ही साइन आउट झाला आहात. पुढे जाण्यासाठी पुन्हा साइन इन करा; तुमचा मसुदा जपून ठेवला आहे.';
+  @override
+  String get listingSuspendedNotice =>
+      'ही लिस्टिंग निलंबित आहे. तुम्ही साइन इन करू शकता, पण पुनरावलोकनापर्यंत ती प्रकाशित करता येणार नाही.';
+  @override
   String get otpLabel => 'वन-टाइम कोड';
   @override
   String get duplicateNumberMessage =>

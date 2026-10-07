@@ -21,6 +21,10 @@ enum SessionStatus {
 
   /// Verified with an existing profile.
   active,
+
+  /// Verified, but moderation has suspended the listing. The owner can sign in
+  /// and read their own state; publishing is blocked server-side.
+  suspended,
 }
 
 /// Provider authentication and the signed-in provider's own listing.
@@ -43,7 +47,13 @@ class SessionController extends ChangeNotifier {
   })  : _auth = auth,
         _providers = providers,
         _consents = consents,
-        _drafts = drafts;
+        _drafts = drafts {
+    final ProviderAuthRepository repo = auth;
+    if (repo is SessionRevocationNotifier) {
+      (repo as SessionRevocationNotifier)
+          .setRevocationListener(handleSessionLost);
+    }
+  }
 
   final ProviderAuthRepository _auth;
   final ProviderRepository _providers;
@@ -64,6 +74,19 @@ class SessionController extends ChangeNotifier {
 
   bool _isBusy = false;
   String? _errorKey;
+
+  /// Bumped whenever the signed-in identity changes (sign-out, deletion,
+  /// revocation, a new restore). An async operation that started under an
+  /// older epoch must not write its result back (phase 059).
+  int _epoch = 0;
+
+  /// Earliest time another code may be requested, when the server or the local
+  /// pacing said to wait.
+  DateTime? _resendAvailableAt;
+
+  /// True when the session ended without the user asking (revoked/expired); the
+  /// UI should ask for a fresh sign-in and keep the draft (phase 050).
+  bool _sessionLost = false;
 
   /// Normalised number the pending challenge was sent to, for display only.
   String? _pendingPhoneE164;
@@ -94,37 +117,107 @@ class SessionController extends ChangeNotifier {
       _pendingPhoneE164 == null ? null : PhoneUtils.formatPretty(_pendingPhoneE164!);
 
   bool get isSignedIn =>
-      _status == SessionStatus.active || _status == SessionStatus.needsProfile;
+      _status == SessionStatus.active ||
+      _status == SessionStatus.needsProfile ||
+      _status == SessionStatus.suspended;
 
   bool get hasProfile => _profile != null;
 
   bool get canPublish => _profile?.phoneDisplayConsented ?? false;
 
-  /// Development-only code to display on screen. Null in a production build.
-  String? get developmentCodeHint => _challenge?.simulatedCode;
+  /// Development-only code to display on screen. Null in a production build
+  /// and for any live challenge (which never carries a code).
+  String? get developmentCodeHint {
+    final String? code = _challenge?.simulatedCode;
+    return (code == null || code.isEmpty) ? null : code;
+  }
+
+  /// Seconds until another code may be requested; 0 when allowed now.
+  int get resendWaitSeconds {
+    final DateTime? at = _resendAvailableAt;
+    if (at == null) return 0;
+    final int left = at.difference(DateTime.now()).inSeconds;
+    return left > 0 ? left : 0;
+  }
+
+  bool get sessionLost => _sessionLost;
+
+  bool get isSuspended => _status == SessionStatus.suspended;
 
   // --------------------------------------------------------------- lifecycle
+  /// Rebuilds state from the verified server identity (phase 051). Nothing
+  /// cached is trusted: ids, profile and account are all re-read, and any
+  /// failure ends in a guest state rather than another provider's owner view.
   Future<void> restore() async {
-    _session = await _auth.restoreSession();
-    _account = await _auth.currentAccount();
-    _profile = await _auth.currentProfile();
-    if (_session == null) {
-      _status = SessionStatus.signedOut;
-    } else if (_profile == null) {
-      _status = SessionStatus.needsProfile;
-    } else {
-      _status = SessionStatus.active;
+    final int epoch = ++_epoch;
+    _clearOwnerState();
+    try {
+      final ProviderSession? session = await _auth.restoreSession();
+      if (epoch != _epoch) return;
+      if (session != null) {
+        final ProviderAccount? account = await _auth.currentAccount();
+        final ProviderProfile? profile =
+            account == null ? null : await _auth.currentProfile();
+        if (epoch != _epoch) return;
+        if (account != null) {
+          _session = session;
+          _account = account;
+          _profile = profile;
+        } else {
+          // Authenticated token, but the account no longer exists.
+          await _auth.signOut();
+        }
+      }
+    } on Object {
+      if (epoch != _epoch) return;
+      _clearOwnerState();
     }
+    _status = _statusFor(_session, _account, _profile);
     notifyListeners();
+  }
+
+  /// Called when the auth layer reports the session was revoked or expired.
+  /// Unlike [signOut] this keeps the onboarding draft so the provider can sign
+  /// in again and continue.
+  void handleSessionLost() {
+    _epoch++;
+    _clearOwnerState();
+    _challenge = null;
+    _pendingPhoneE164 = null;
+    _sessionLost = true;
+    _status = SessionStatus.signedOut;
+    notifyListeners();
+  }
+
+  void _clearOwnerState() {
+    _session = null;
+    _account = null;
+    _profile = null;
+    _existingProfileId = null;
+    _sessionLost = false;
+  }
+
+  static SessionStatus _statusFor(
+    ProviderSession? session,
+    ProviderAccount? account,
+    ProviderProfile? profile,
+  ) {
+    if (session == null) return SessionStatus.signedOut;
+    if (account?.isSuspended ?? false) return SessionStatus.suspended;
+    return profile == null ? SessionStatus.needsProfile : SessionStatus.active;
   }
 
   // ------------------------------------------------------------ phone entry
   /// Requests a code. Never reveals whether the number is already registered.
   Future<bool> requestCode(String rawPhone) async {
+    // A second tap while a request is running is ignored (phase 046).
+    if (_isBusy) return false;
+    final int epoch = _epoch;
     _setBusy(true);
     _errorKey = null;
     final OtpChallengeResult result = await _auth.requestOtp(rawPhone);
     _setBusy(false);
+    if (epoch != _epoch) return false;
 
     if (!result.isSuccess) {
       _errorKey = switch (result.error) {
@@ -132,12 +225,20 @@ class SessionController extends ChangeNotifier {
         PhoneInputError.unsupportedRegion => 'invalidPhoneNumber',
         PhoneInputError.invalidFormat => 'invalidPhoneNumber',
         PhoneInputError.sendFailed => 'errorUnknown',
+        PhoneInputError.rateLimited => 'otpRateLimited',
+        PhoneInputError.reauthRequired => 'reauthRequired',
         null => 'errorUnknown',
       };
+      if (result.error == PhoneInputError.rateLimited) {
+        _resendAvailableAt =
+            DateTime.now().add(result.retryAfter ?? const Duration(seconds: 60));
+      }
       notifyListeners();
       return false;
     }
 
+    _sessionLost = false;
+    _resendAvailableAt = DateTime.now().add(const Duration(seconds: 60));
     _challenge = result.challenge;
     _pendingPhoneE164 = result.challenge!.phoneE164;
     _status = SessionStatus.awaitingOtp;
@@ -154,6 +255,8 @@ class SessionController extends ChangeNotifier {
       return false;
     }
 
+    if (_isBusy) return false;
+    final int epoch = _epoch;
     _setBusy(true);
     _errorKey = null;
     try {
@@ -161,16 +264,22 @@ class SessionController extends ChangeNotifier {
         challengeId: challenge.id,
         code: code,
       );
+      if (epoch != _epoch) return false;
+      // A different number than the saved draft's means a different person:
+      // never carry the previous person's draft into this account.
+      final ProviderDraft? draft = await _drafts.load();
+      if (draft != null && draft.phoneE164 != result.session.phoneE164) {
+        await _drafts.clear();
+      }
       _session = result.session;
       _account = await _auth.currentAccount();
       _profile = result.profile;
       _existingProfileId = result.existingProfileId;
       _challenge = null;
-      _status = result.hasExistingProfile
-          ? SessionStatus.active
-          : SessionStatus.needsProfile;
+      _status = _statusFor(_session, _account, _profile);
       return true;
     } on OtpException catch (error) {
+      if (epoch != _epoch) return false;
       _errorKey = switch (error.reason) {
         OtpFailure.invalid => 'otpInvalid',
         OtpFailure.expired => 'otpExpired',
@@ -228,11 +337,15 @@ class SessionController extends ChangeNotifier {
   /// Returns null and sets [errorKey] on failure; a duplicate number surfaces
   /// as [duplicateNumberMessageKey] rather than a generic error.
   Future<ProviderProfile?> createProfile(RegistrationSubmission submission) async {
+    final int epoch = _epoch;
     _setBusy(true);
     _errorKey = null;
     try {
       final ProviderProfile profile =
           await _auth.registerProfile(submission: submission);
+      // The identity changed while the request was in flight: the created
+      // profile belongs to the previous session and must not be shown here.
+      if (epoch != _epoch) return null;
       _profile = profile;
       _session = await _auth.restoreSession();
       _account = await _auth.currentAccount();
@@ -261,6 +374,7 @@ class SessionController extends ChangeNotifier {
       notifyListeners();
       return false;
     }
+    final int epoch = _epoch;
     _setBusy(true);
     _errorKey = null;
     try {
@@ -268,6 +382,7 @@ class SessionController extends ChangeNotifier {
         profile: profile,
         session: session,
       );
+      if (epoch != _epoch) return false;
       _profile = updated;
       // Consents are re-recorded whenever the provider changes their visibility
       // choices, so the audit trail reflects the latest decision.
@@ -307,13 +422,16 @@ class SessionController extends ChangeNotifier {
     final String? profileId = _profile?.id;
     if (session == null || profileId == null) return false;
 
+    final int epoch = _epoch;
     _setBusy(true);
     _errorKey = null;
     try {
-      _profile = await _providers.publish(
+      final ProviderProfile next = await _providers.publish(
         profileId: profileId,
         session: session,
       );
+      if (epoch != _epoch) return false;
+      _profile = next;
       return true;
     } on RepositoryException catch (error) {
       _errorKey = _keyForRepositoryError(error);
@@ -331,13 +449,16 @@ class SessionController extends ChangeNotifier {
     final String? profileId = _profile?.id;
     if (session == null || profileId == null) return false;
 
+    final int epoch = _epoch;
     _setBusy(true);
     try {
-      _profile = await _providers.setListingStatus(
+      final ProviderProfile next = await _providers.setListingStatus(
         profileId: profileId,
         status: status,
         session: session,
       );
+      if (epoch != _epoch) return false;
+      _profile = next;
       return true;
     } on RepositoryException catch (error) {
       _errorKey = _keyForRepositoryError(error);
@@ -353,13 +474,16 @@ class SessionController extends ChangeNotifier {
     final String? profileId = _profile?.id;
     if (session == null || profileId == null) return false;
 
+    final int epoch = _epoch;
     _setBusy(true);
     try {
-      _profile = await _providers.setAvailability(
+      final ProviderProfile next = await _providers.setAvailability(
         profileId: profileId,
         availability: availability,
         session: session,
       );
+      if (epoch != _epoch) return false;
+      _profile = next;
       return true;
     } on RepositoryException catch (error) {
       _errorKey = _keyForRepositoryError(error);
@@ -380,7 +504,7 @@ class SessionController extends ChangeNotifier {
     try {
       await _providers.deleteListing(profileId: profileId, session: session);
       _profile = null;
-      _session = session.copyWith(profileId: null);
+      _session = session.copyWith(clearProfileId: true);
       _account = await _auth.currentAccount();
       _status = SessionStatus.needsProfile;
       return true;
@@ -399,6 +523,7 @@ class SessionController extends ChangeNotifier {
     _setBusy(true);
     try {
       await _auth.deleteAccount();
+      _epoch++;
       await _drafts.clear();
       _profile = null;
       _account = null;
@@ -407,6 +532,11 @@ class SessionController extends ChangeNotifier {
       _pendingPhoneE164 = null;
       _existingProfileId = null;
       _status = SessionStatus.signedOut;
+      _errorKey = null;
+    } on RepositoryException catch (error) {
+      // Nothing was deleted (e.g. a recent sign-in is required first): the
+      // account and the draft stay exactly as they were.
+      _errorKey = _keyForRepositoryError(error);
     } finally {
       _setBusy(false);
       notifyListeners();
@@ -414,6 +544,7 @@ class SessionController extends ChangeNotifier {
   }
 
   Future<void> signOut() async {
+    _epoch++;
     await _auth.signOut();
     await _drafts.clear();
     _session = null;
@@ -455,5 +586,7 @@ class SessionController extends ChangeNotifier {
         RepositoryErrorCode.categoryNotAllowed => 'selectAtLeastOneCategory',
         RepositoryErrorCode.suspended => 'errorUnknown',
         RepositoryErrorCode.conflict => duplicateNumberMessageKey,
+        RepositoryErrorCode.reauthRequired => 'reauthRequired',
+        RepositoryErrorCode.unavailable => 'errorUnknown',
       };
 }

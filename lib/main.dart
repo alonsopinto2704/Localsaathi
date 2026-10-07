@@ -6,6 +6,8 @@ import 'app/app_dependencies.dart';
 import 'app/local_saathi_app.dart';
 import 'core/config/app_config.dart';
 import 'data/local/key_value_store.dart';
+import 'data/supabase/auth_bootstrap.dart';
+import 'data/supabase/auth_config.dart';
 
 /// Entry point.
 ///
@@ -25,7 +27,10 @@ Future<void> main() async {
 Future<AppDependencies> _buildDependencies() async {
   try {
     final SharedPreferencesStore store = await SharedPreferencesStore.open();
-    return await AppDependencies.mock(keyValueStore: store);
+    return await AppDependencies.mock(
+      keyValueStore: store,
+      auth: await buildLiveAuth(AuthConfig.fromEnvironment(), store),
+    );
   } on Object catch (error, stack) {
     // Never block the app on local storage. The user gets a working directory
     // that simply forgets between launches, which is far better than a crash.

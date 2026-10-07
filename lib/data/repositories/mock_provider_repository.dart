@@ -319,9 +319,14 @@ class MockProviderRepository implements ProviderRepository {
     // have nothing to open.
     final bool whatsapp = profile.whatsappEnabled && profile.phoneDisplayConsented;
 
+    // Withdrawing phone consent pauses a live listing (mirrors the SQL trigger).
     final ProviderProfile updated = profile.copyWith(
       displayName: profile.displayName.trim(),
       whatsappEnabled: whatsapp,
+      status: !profile.phoneDisplayConsented &&
+              profile.status == ListingStatus.published
+          ? ListingStatus.paused
+          : profile.status,
       updatedAt: _now,
     );
     _store.profilesById[updated.id] = updated;
@@ -356,6 +361,18 @@ class MockProviderRepository implements ProviderRepository {
     final ProviderAccount? account = _store.accountForPhone(profile.phoneE164);
     if (account?.isSuspended ?? false) {
       throw const RepositoryException(RepositoryErrorCode.suspended);
+    }
+    // At least one launch-approved category and an active city, as in SQL.
+    bool approved = false;
+    for (final String id in profile.categoryIds) {
+      if ((await _catalog.categoryById(id))?.isApprovedForLaunch ?? false) {
+        approved = true;
+        break;
+      }
+    }
+    final City? city = await _locations.cityById(profile.baseCityId);
+    if (!approved || city?.launchStatus != CityLaunchStatus.active) {
+      throw const RepositoryException(RepositoryErrorCode.listingNotPublishable);
     }
 
     final ProviderProfile published = profile.copyWith(
@@ -417,7 +434,23 @@ class MockProviderRepository implements ProviderRepository {
     // documented behaviour of "delete my listing".
     _store.profilesById.remove(profileId);
     _store.profileIdByPhone.remove(profile.phoneE164);
+    final ProviderAccount? account = _store.accountForPhone(profile.phoneE164);
+    if (account != null) {
+      _store.accountsById[account.id] =
+          account.copyWith(clearProfileId: true);
+    }
+    if (_store.session?.profileId == profileId) {
+      _store.session = _store.session!.copyWith(clearProfileId: true);
+    }
+    _store.consents.removeWhere((c) => c.providerId == profileId);
+    _store.verificationRecords.removeWhere((v) => v.providerId == profileId);
+    _store.engagementEvents.removeWhere((e) => e.providerId == profileId);
     await _store.persistProfiles();
+    await _store.persistAccounts();
+    await _store.persistSession();
+    await _store.persistConsents();
+    await _store.persistVerification();
+    await _store.persistEngagement();
   }
 
   @override

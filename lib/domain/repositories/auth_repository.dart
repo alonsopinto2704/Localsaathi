@@ -69,24 +69,49 @@ abstract class ProviderAuthRepository {
   Future<void> deleteAccount();
 }
 
+/// Implemented by repositories whose session can end without the user asking
+/// (server-side revocation, expired refresh token). The session controller
+/// registers itself so the UI can ask for a fresh sign-in while keeping the
+/// provider's draft.
+abstract interface class SessionRevocationNotifier {
+  void setRevocationListener(void Function()? listener);
+}
+
 /// Outcome of requesting an OTP.
 class OtpChallengeResult {
-  const OtpChallengeResult._({this.challenge, this.error});
+  const OtpChallengeResult._({this.challenge, this.error, this.retryAfter});
 
   factory OtpChallengeResult.success(OtpChallenge challenge) =>
       OtpChallengeResult._(challenge: challenge);
 
-  factory OtpChallengeResult.failure(PhoneInputError error) =>
-      OtpChallengeResult._(error: error);
+  factory OtpChallengeResult.failure(
+    PhoneInputError error, {
+    Duration? retryAfter,
+  }) =>
+      OtpChallengeResult._(error: error, retryAfter: retryAfter);
 
   final OtpChallenge? challenge;
   final PhoneInputError? error;
+
+  /// For [PhoneInputError.rateLimited]: how long to wait before asking again.
+  final Duration? retryAfter;
 
   bool get isSuccess => challenge != null;
 }
 
 /// Localised errors for phone entry.
-enum PhoneInputError { empty, invalidFormat, unsupportedRegion, sendFailed }
+enum PhoneInputError {
+  empty,
+  invalidFormat,
+  unsupportedRegion,
+  sendFailed,
+
+  /// Too many codes requested; see [OtpChallengeResult.retryAfter].
+  rateLimited,
+
+  /// A number change needs a recent sign-in first.
+  reauthRequired,
+}
 
 /// Outcome of verifying an OTP.
 class PhoneVerificationResult {

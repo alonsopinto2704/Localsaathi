@@ -32,7 +32,7 @@ select throws_ok($sql$ select * from private.audit_events $sql$, '42501', null, 
 select throws_like($sql$ select public.admin_audit_events() $sql$, '%not_owner:%', 'admin_audit_events refuses a non-admin');
 reset role;
 
-select tests.authenticate_as((select value::uuid from fx where key = 'admin'));
+select tests.authenticate_as_admin((select value::uuid from fx where key = 'admin'));
 select is(jsonb_typeof(public.admin_audit_events(50)), 'array', 'admin_audit_events returns an array to an admin');
 select ok(
   exists (select 1 from jsonb_array_elements(public.admin_audit_events(500)) e

@@ -124,6 +124,19 @@ errCheck('anon rpc provider_profile_json denied', () => rpc('provider_profile_js
 errCheck('anon rpc public_profile_json denied', () => rpc('public_profile_json', { p_id: OWNER_PID }));
 errCheck('anon rpc is_publicly_listed denied', () => rpc('is_publicly_listed', { p_id: OWNER_PID }));
 errCheck('anon rpc admin_audit_events denied', () => rpc('admin_audit_events', {}));
+// Identity controls (phases 047-057). Written against migrations 0024-0029;
+// like the rest of this pack, not executed until a Supabase project exists.
+errCheck('anon rpc otp_send_gate denied (spend control is service-role only)', () => rpc('otp_send_gate', { p_phone: '+919000000000' }));
+errCheck('OWNER_JWT rpc otp_send_gate denied', () => rpc('otp_send_gate', { p_phone: '+919000000000' }, OWNER_JWT));
+errCheck('anon rpc request_sensitive_action denied', () => rpc('request_sensitive_action', { p_action: 'delete_account' }));
+errCheck('OWNER_JWT rpc consume_sensitive_grant denied (service role only)', () => rpc('consume_sensitive_grant', { p_user_id: OWNER_USER_ID, p_action: 'delete_account' }, OWNER_JWT));
+errCheck('OWNER_JWT rpc begin_account_deletion denied (cannot start deletion via the API)', () => rpc('begin_account_deletion', { p_user_id: OWNER_USER_ID, p_idempotency_key: 'authz-probe-0001' }, OWNER_JWT));
+errCheck('OWNER_JWT rpc admin_execute_recovery denied for a non-admin', () => rpc('admin_execute_recovery', { p_case_id: '00000000-0000-0000-0000-000000000000' }, OWNER_JWT));
+errCheck('anon POST on private tables is denied (schema not exposed)', () => call('POST', '/rest/v1/admin_roles', { body: { role: 'support' } }));
+add('OWNER_JWT request_sensitive_action with an old session is reauth_required, never granted', "error containing 'reauth_required' (or ok only if the JWT is fresh)", async () => {
+  const r = await rpc('request_sensitive_action', { p_action: 'export_private_evidence' }, OWNER_JWT);
+  return [isErr(r) ? msg(r).includes('reauth_required') : r.status === 200, `status ${r.status} ${(r.json?.message ?? r.text).slice(0, 100)}`];
+});
 
 add('anon search_providers returns only allowlisted keys, no leaks', 'status 200, 0 violations', async () => {
   const r = await rpc('search_providers', { p_city_id: CITY, p_locality_id: LOC, p_limit: 50 });

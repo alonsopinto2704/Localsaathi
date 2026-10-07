@@ -58,6 +58,16 @@ Send SMS Hook) tradeoff. This does not block any local development work.
 
 ## Running the test suite
 
+Without Docker (what CI and the evidence files use):
+
+```bash
+npm --prefix backend test      # PGlite pgTAP suites + Node tests (Edge Function logic, fixtures, config guard)
+npm --prefix backend run test:db     # database suites only
+npm --prefix backend run test:unit   # Node tests only (needs Node 22.18+/24 for TypeScript)
+```
+
+With the local Supabase stack running:
+
 ```bash
 supabase test db
 ```
@@ -79,7 +89,8 @@ backend/
     migrations/               -- schema, RLS, functions, storage (run in filename order)
     seed.sql                  -- GENERATED, do not hand-edit (see script above)
     functions/
-      delete-account/         -- Edge Function: the one place a service-role key is used
+      delete-account/         -- Edge Function: deletes the caller's account (JWT-verified, idempotent job)
+      send-sms-hook/          -- Auth Send SMS hook: spend gate + SMS sender (fails closed)
     tests/database/           -- pgTAP tests (see its own README)
 ```
 
@@ -97,13 +108,19 @@ The anon key is safe to ship in the compiled app — it has no special
 privileges beyond what RLS grants to the `anon` role, which is exactly what
 every policy in this schema was written to assume.
 
-**Edge Function** (`delete-account`), set via `supabase secrets set` once a
+**Identity (`LS_ENV`)**: `--dart-define=LS_ENV=demo|staging|production`
+(default `demo`, the mock). A staging/production build without a usable
+`SUPABASE_URL`/`SUPABASE_ANON_KEY` stays a guest-only app; it never falls back
+to the simulated OTP. See docs/identity-operations.md.
+
+**Edge Functions** (`delete-account`, `send-sms-hook`), set via `supabase secrets set` once a
 project exists, never committed:
 
 | Name | Notes |
 |---|---|
 | `SUPABASE_URL` | the project's API URL |
 | `SUPABASE_SERVICE_ROLE_KEY` | **never** put this in the Flutter app or any client-readable config |
+| `SEND_SMS_HOOK_SECRET`, `SMS_MODE`, `SMS_ALLOW_FAKE`, `SMS_PROVIDER_URL`, `SMS_PROVIDER_AUTH_KEY`, `SMS_DLT_TEMPLATE_ID` | `send-sms-hook` only; see docs/sms-provider-evaluation.md |
 
 No other secret exists yet. No payment, no production SMS provider, and no
 production Supabase project have been created by this work — see

@@ -59,12 +59,42 @@ class PhoneUtils {
 
   static final RegExp _digitsOnly = RegExp(r'\D');
 
+  /// First code point of each script's 0-9 run (all ten digits are contiguous).
+  /// Covers the scripts used in India (Devanagari is what Hindi and Marathi
+  /// keyboards produce), Arabic-Indic and full-width forms.
+  static const List<int> _digitZeroes = <int>[
+    0x0660, 0x06F0, 0x0966, 0x09E6, 0x0A66, 0x0AE6, 0x0B66, 0x0BE6, //
+    0x0C66, 0x0CE6, 0x0D66, 0xFF10,
+  ];
+
+  /// Characters people paste between digit groups; ignored, never meaningful.
+  static final RegExp _separators = RegExp(
+    r'[\s\u00A0\u202F\u3000\u200B-\u200F\u202A-\u202E\u2060\uFEFF().\-]',
+  );
+
+  /// Maps non-ASCII decimal digits to ASCII; other characters pass through.
+  static String asciiDigits(String raw) {
+    final StringBuffer out = StringBuffer();
+    for (final int rune in raw.runes) {
+      int mapped = rune;
+      for (final int zero in _digitZeroes) {
+        if (rune >= zero && rune <= zero + 9) {
+          mapped = 0x30 + (rune - zero);
+          break;
+        }
+      }
+      out.writeCharCode(mapped);
+    }
+    return out.toString();
+  }
+
   /// Strips formatting and returns digits plus a leading `+` when present.
   static bool looksLikeInternational(String raw) =>
       raw.trimLeft().startsWith('+');
 
   /// Returns the national significant digits for [raw], ignoring formatting.
-  static String digitsOf(String raw) => raw.replaceAll(_digitsOnly, '');
+  static String digitsOf(String raw) =>
+      asciiDigits(raw).replaceAll(_digitsOnly, '');
 
   /// Converts [raw] to a canonical [NormalizedPhone].
   ///
@@ -77,9 +107,16 @@ class PhoneUtils {
   }) {
     final String defaultCode =
         (defaultDialCode ?? AppConfig.defaultDialCode).replaceAll('+', '');
-    final String trimmed = raw.trim();
+    final String trimmed = asciiDigits(raw).replaceAll(_separators, ' ').trim();
     if (trimmed.isEmpty) {
       onError?.call(PhoneValidationError.empty);
+      return null;
+    }
+    // Only digits, separators and one leading '+' are input. Letters or other
+    // symbols are rejected rather than silently dropped, so "98765abc43210"
+    // can never become a different number than the one the user typed.
+    if (!RegExp(r'^\+?[0-9 ]+$').hasMatch(trimmed)) {
+      onError?.call(PhoneValidationError.notNumeric);
       return null;
     }
 
@@ -125,6 +162,10 @@ class PhoneUtils {
     if (expectedLength == null) {
       onError?.call(PhoneValidationError.unsupportedDialCode);
       return null;
+    }
+    // "+91 098765 43210": a trunk 0 typed after the country code.
+    if (national.length == expectedLength + 1 && national.startsWith('0')) {
+      national = national.substring(1);
     }
     if (national.length < expectedLength) {
       onError?.call(PhoneValidationError.tooShort);

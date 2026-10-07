@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/config/app_config.dart';
 import '../../../core/l10n/app_localizations.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/async_states.dart';
+import '../../../data/supabase/auth_config.dart';
 
 /// Daily availability for a single weekday, as a list of one or more windows.
 ///
@@ -240,7 +242,13 @@ class PhoneVerificationPanel extends StatelessWidget {
           TextField(
             controller: phoneController,
             keyboardType: TextInputType.phone,
-            maxLength: 14,
+            maxLength: 24,
+            autofillHints: const <String>[AutofillHints.telephoneNumberNational],
+            inputFormatters: <TextInputFormatter>[_phoneInputFilter],
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) {
+              if (!settings.isBusy) onRequestCode();
+            },
             decoration: InputDecoration(
               labelText: strings.phoneNumberLabel,
               hintText: strings.phoneNumberHint,
@@ -260,13 +268,15 @@ class PhoneVerificationPanel extends StatelessWidget {
         ],
 
         if (settings.phase == SignInPhase.otp) ...<Widget>[
-          Row(
+          // A Wrap, not a Row: at 2x text the number and the button no longer
+          // fit side by side on a 360 dp phone (found by the phase 058 test).
+          Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: AppSpacing.sm,
             children: <Widget>[
-              Expanded(
-                child: Text(
-                  '${strings.otpSentTo} ${settings.pendingPhonePretty ?? ''}',
-                  style: theme.textTheme.bodyMedium,
-                ),
+              Text(
+                '${strings.otpSentTo} ${settings.pendingPhonePretty ?? ''}',
+                style: theme.textTheme.bodyMedium,
               ),
               TextButton(
                 onPressed: onChangeNumber,
@@ -275,12 +285,22 @@ class PhoneVerificationPanel extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.md),
+          // No SMS-inbox permission is requested or needed: the code is typed or
+          // pasted (spaces and Devanagari digits are accepted and cleaned).
           TextField(
             controller: otpController,
             keyboardType: TextInputType.number,
-            maxLength: 6,
+            maxLength: 14,
+            autofillHints: const <String>[AutofillHints.oneTimeCode],
+            inputFormatters: <TextInputFormatter>[_codeInputFilter],
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) {
+              if (!settings.isBusy) onVerifyCode();
+            },
             decoration: InputDecoration(
               labelText: strings.otpLabel,
+              helperText: strings.otpPasteHint,
+              helperMaxLines: 2,
               counterText: '',
               prefixIcon: const Icon(Icons.password),
             ),
@@ -293,9 +313,39 @@ class PhoneVerificationPanel extends StatelessWidget {
                 : Text(strings.verifyOtp),
           ),
           const SizedBox(height: AppSpacing.md),
-          OutlinedButton(
-            onPressed: settings.isBusy ? null : () => onResend(),
-            child: Text(strings.resendOtp),
+          Semantics(
+            // The visible label counts down every second; assistive tech hears
+            // a stable description instead of an announcement per tick.
+            container: true,
+            button: true,
+            enabled: !settings.isBusy && settings.resendSecondsLeft == 0,
+            label: settings.resendSecondsLeft == 0
+                ? strings.resendOtp
+                : '${strings.resendOtp}. ${strings.otpResendWaitingLabel}',
+            excludeSemantics: true,
+            onTap: settings.isBusy || settings.resendSecondsLeft > 0
+                ? null
+                : () => onResend(),
+            child: OutlinedButton(
+              onPressed: settings.isBusy || settings.resendSecondsLeft > 0
+                  ? null
+                  : () => onResend(),
+              child: Text(strings.resendOtp),
+            ),
+          ),
+          if (settings.resendSecondsLeft > 0)
+            Padding(
+              padding: const EdgeInsets.only(top: AppSpacing.sm),
+              child: ExcludeSemantics(
+                child: Text(
+                  strings.otpResendInTemplate(settings.resendSecondsLeft),
+                  style: theme.textTheme.bodySmall,
+                ),
+              ),
+            ),
+          Padding(
+            padding: const EdgeInsets.only(top: AppSpacing.sm),
+            child: Text(strings.otpDelayedHelp, style: theme.textTheme.bodySmall),
           ),
         ],
 
@@ -369,6 +419,17 @@ class _ButtonSpinner extends StatelessWidget {
       );
 }
 
+/// Digits in any script a phone keyboard produces, spaces and the separators
+/// people paste; validation happens in PhoneUtils, not here.
+final TextInputFormatter _phoneInputFilter = FilteringTextInputFormatter.allow(
+  RegExp(r'[0-9\u0660-\u0669\u06F0-\u06F9\u0966-\u096F\uFF10-\uFF19+\s().\-]'),
+);
+
+/// A code is digits (any script) and spaces from a paste such as "123 456".
+final TextInputFormatter _codeInputFilter = FilteringTextInputFormatter.allow(
+  RegExp(r'[0-9\u0660-\u0669\u06F0-\u06F9\u0966-\u096F\uFF10-\uFF19\s]'),
+);
+
 /// The phases of the provider sign-in panel.
 enum SignInPhase { phone, otp, verifiedExisting }
 
@@ -382,13 +443,25 @@ class ProviderSignInViewState extends ChangeNotifier {
     this.phase = SignInPhase.phone,
     this.isBusy = false,
     this.pendingPhonePretty,
-    this.showDevelopmentNotice = AppConfig.useDevelopmentOtpSimulation,
-  });
+    bool? showDevelopmentNotice,
+  }) : showDevelopmentNotice = showDevelopmentNotice ??
+            (AppConfig.useDevelopmentOtpSimulation &&
+                AuthConfig.fromEnvironment().isDemo);
 
   SignInPhase phase;
   bool isBusy;
   String? pendingPhonePretty;
   final bool showDevelopmentNotice;
+
+  /// When another code may be requested; drives the resend countdown.
+  DateTime? resendAvailableAt;
+
+  int get resendSecondsLeft {
+    final DateTime? at = resendAvailableAt;
+    if (at == null) return 0;
+    final int left = at.difference(DateTime.now()).inSeconds;
+    return left > 0 ? left : 0;
+  }
 
   void notify() => notifyListeners();
 }

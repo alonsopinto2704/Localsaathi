@@ -351,6 +351,21 @@ class AppStrings {
   String get otpAttemptsExceeded =>
       'Too many wrong attempts. Request a new code.';
   String get otpResent => 'A new code was sent.';
+  String get otpRateLimited =>
+      'Too many codes requested. Please wait a little before asking again.';
+  String otpResendInTemplate(int seconds) =>
+      'You can ask for a new code in $seconds seconds.';
+  String get otpResendWaitingLabel =>
+      'Resend code is available after a short wait';
+  String get otpDelayedHelp =>
+      'Codes sent by SMS can take a few minutes. Keep this screen open; you can ask for a new code when the wait ends.';
+  String get otpPasteHint => 'Type or paste the 6-digit code.';
+  String get reauthRequired =>
+      'For your security, confirm with a new code before doing this.';
+  String get sessionExpired =>
+      'You were signed out. Sign in again to continue; your draft is kept.';
+  String get listingSuspendedNotice =>
+      'This listing is suspended. You can sign in, but it cannot be published until it is reviewed.';
   String get invalidPhoneNumber =>
       'Enter a valid 10-digit Indian mobile number.';
   String get duplicateNumberTitle => 'This number already has a profile';

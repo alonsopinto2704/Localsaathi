@@ -67,7 +67,7 @@ select throws_like($sql$ select public.set_feature_flag('media_intake', true, 't
   '%not_owner:%', 'a provider cannot change a feature flag');
 reset role;
 insert into fx values ('admin', tests.create_admin('+919000001502')::text);
-select tests.authenticate_as((select value::uuid from fx where key = 'admin'));
+select tests.authenticate_as_admin((select value::uuid from fx where key = 'admin'));
 select public.set_feature_flag('media_intake', true, 'pilot cohort ready');
 reset role;
 select ok(

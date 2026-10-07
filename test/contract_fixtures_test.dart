@@ -71,18 +71,18 @@ void main() {
             .expand((Map<String, dynamic> p) => p['photos'] as List<dynamic>)
             .first) as Map<String, dynamic>;
     expect(jsonEncode(ProviderPhoto.fromJson(photo).toJson()), contains(photo['remoteUrl'] as String));
-  }, skip: 'phase-014 #4: ProviderPhoto.fromJson drops remoteUrl (owner: phases 061-080)');
+  });
 
   test('report: snake_case SQL reason decodes (#1)', () {
     final Map<String, dynamic> body =
         _at(_fixture('report'), 'success.request.body') as Map<String, dynamic>;
     final Report report = Report.fromJson(<String, dynamic>{
-      'id': body['id'],
-      'providerId': body['provider_id'],
-      'reason': body['reason'],
+      'id': 'r1',
+      'providerId': body['p_provider_id'],
+      'reason': body['p_reason'],
     });
     expect(report.reason, ReportReason.wrongPhoneNumber);
-  }, skip: 'phase-014 #1: _enumOr compares camelCase .name, SQL sends snake_case (owner: phases 061-080)');
+  });
 
   test('every normalized error code maps to a RepositoryErrorCode', () {
     final List<dynamic> catalogue = _fixture('error-codes')['codes'] as List<dynamic>;

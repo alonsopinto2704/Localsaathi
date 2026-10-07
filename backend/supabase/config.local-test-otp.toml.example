@@ -1,0 +1,10 @@
+# LOCAL DEVELOPMENT ONLY. Not read by the Supabase CLI under this name, on
+# purpose: a fixed OTP in config.toml could be pushed to a hosted project by
+# `supabase config push` and become a permanent back door (threat TH-03,
+# phase 012). To use it, copy the block below into a throw-away local
+# config.toml, run `supabase start`, and DO NOT commit or push that file.
+# backend/scripts/check-identity-config.mjs fails the test run if it finds a
+# test_otp block in config.toml.
+#
+# [auth.sms.test_otp]
+# "+919000099999" = "000000"     # synthetic number; pick your own, never a real one

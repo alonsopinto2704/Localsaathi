@@ -57,7 +57,7 @@ async function main() {
   // Migration 0013 revokes the implicit PUBLIC EXECUTE on new functions, which
   // also covers pgTAP's. Suites switch to anon/authenticated mid-test and still
   // need to call ok()/is()/throws_like(), so grant them back -- test-only.
-  await db.exec('grant execute on all functions in schema extensions to anon, authenticated');
+  await db.exec('grant execute on all functions in schema extensions to anon, authenticated, service_role');
   // Convention: `*.test.sql` are pgTAP suites; every other .sql in the
   // directory (0000_helpers.sql) is setup, loaded once and never run as a suite.
   const allFiles = sqlFiles('tests/database');
