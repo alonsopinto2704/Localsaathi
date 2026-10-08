@@ -18,7 +18,7 @@ select set_eq(
   $$ values ('search_providers'), ('get_public_profile'), ('similar_providers'),
             ('provider_count_by_locality'), ('providers_published_in_city'),
             ('active_promotions'), ('flag_enabled'), ('get_client_flags'), ('search_cities'), ('search_categories'),
-            ('submit_report'), ('record_engagement'), ('request_city'), ('is_admin') $$,
+            ('submit_report'), ('record_engagement'), ('request_city'), ('is_admin'), ('get_trust_summary') $$,
   'anon can execute exactly the discovery allowlist, guest writes and is_admin'
 );
 

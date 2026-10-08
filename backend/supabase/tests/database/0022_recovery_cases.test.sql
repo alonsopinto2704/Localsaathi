@@ -10,7 +10,8 @@ insert into fx values
   ('owner', tests.create_phone_user('+919000220001')::text),       -- the real owner (lost SIM)
   ('claimant', tests.create_phone_user('+919000220002')::text),    -- new number, no listing
   ('attacker', tests.create_phone_user('+919000220003')::text),    -- has a listing of their own
-  ('admin', tests.create_admin('+919000220009')::text);
+  ('admin', tests.create_admin('+919000220009')::text),
+  ('admin2', tests.create_admin('+919000220010')::text);   -- executor: must differ from the approving reviewer
 insert into fx select 'p', tests.create_published_provider((select value::uuid from fx where key = 'owner'), '+919000220001', 'Recovery Listing')::text;
 insert into fx select 'pa', tests.create_published_provider((select value::uuid from fx where key = 'attacker'), '+919000220003', 'Attacker Listing')::text;
 insert into auth.sessions (user_id) values ((select value::uuid from fx where key = 'owner')), ((select value::uuid from fx where key = 'owner'));
@@ -71,7 +72,7 @@ reset role;
 select ok((select eligible_at between now() + interval '6 days 23 hours' and now() + interval '7 days 1 hour'
            from private.recovery_cases where id = (select value::uuid from fx where key = 'case1')),
   'approval starts a 7-day waiting period');
-select tests.authenticate_as_admin((select value::uuid from fx where key = 'admin'));
+select tests.authenticate_as_admin((select value::uuid from fx where key = 'admin2'));
 select throws_like(
   format($sql$ select public.admin_execute_recovery(%L::uuid) $sql$, (select value from fx where key = 'case1')),
   'conflict%', 'nothing happens during the waiting period, even for an administrator');
@@ -105,12 +106,12 @@ reset role;
 update private.recovery_cases set eligible_at = now() - interval '1 minute' where id = (select value::uuid from fx where key = 'case2');
 
 -- A stale admin session may not execute.
-select tests.authenticate_as_admin((select value::uuid from fx where key = 'admin'), 3600);
+select tests.authenticate_as_admin((select value::uuid from fx where key = 'admin2'), 3600);
 select throws_like(
   format($sql$ select public.admin_execute_recovery(%L::uuid) $sql$, (select value from fx where key = 'case2')),
   'reauth_required%', 'a stale administrator session cannot carry out a transfer');
 reset role;
-select tests.authenticate_as_admin((select value::uuid from fx where key = 'admin'));
+select tests.authenticate_as_admin((select value::uuid from fx where key = 'admin2'));
 select public.admin_execute_recovery((select value::uuid from fx where key = 'case2'));
 reset role;
 
@@ -127,7 +128,7 @@ select is((select count(*)::int from auth.sessions where user_id = (select value
 select is((select count(*)::int from private.audit_events
            where action in ('recovery_case_opened', 'recovery_case_approve', 'recovery_case_disputed', 'recovery_executed', 'phone_changed')), 7,
   'every step is audited: 2 opened, 2 approved, 1 disputed, 1 executed, 1 phone change');
-select tests.authenticate_as_admin((select value::uuid from fx where key = 'admin'));
+select tests.authenticate_as_admin((select value::uuid from fx where key = 'admin2'));
 select throws_like(
   format($sql$ select public.admin_execute_recovery(%L::uuid) $sql$, (select value from fx where key = 'case2')),
   'conflict%', 'replaying the execution does nothing');

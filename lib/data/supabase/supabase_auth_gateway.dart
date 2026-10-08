@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'auth_config.dart';
 import 'auth_gateway.dart';
+import 'data_gateway.dart';
 import 'secure_session_storage.dart';
 
 /// Initialises the Supabase SDK for a live build. Call once from `main`, only
@@ -29,7 +30,7 @@ Future<SupabaseClient> initializeSupabase(
 /// plain value from `auth_gateway.dart`; SDK exceptions are mapped to
 /// [GatewayException] / [GatewayRpcException] so no screen, controller or log
 /// line ever carries SDK objects, tokens or response bodies.
-class SupabaseAuthGateway implements AuthGateway {
+class SupabaseAuthGateway implements AuthGateway, DataGateway {
   SupabaseAuthGateway(this._client);
 
   final SupabaseClient _client;
@@ -105,6 +106,27 @@ class SupabaseAuthGateway implements AuthGateway {
       await _auth.signOut(scope: SignOutScope.local);
     } on AuthException catch (error) {
       throw _mapAuth(error);
+    }
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> selectRows(
+    String table, {
+    Map<String, String> eq = const <String, String>{},
+    String? orderBy,
+  }) async {
+    try {
+      PostgrestFilterBuilder<List<Map<String, dynamic>>> query =
+          _client.from(table).select();
+      for (final MapEntry<String, String> e in eq.entries) {
+        query = query.eq(e.key, e.value);
+      }
+      return orderBy == null ? await query : await query.order(orderBy);
+    } on PostgrestException catch (error) {
+      throw _mapPostgrest(error);
+    } on Object catch (error) {
+      if (error is GatewayException || error is GatewayRpcException) rethrow;
+      throw const GatewayException(GatewayErrorKind.transient);
     }
   }
 

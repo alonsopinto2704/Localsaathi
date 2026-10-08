@@ -17,6 +17,7 @@ class _MemorySecrets implements SecretStore {
   final Map<String, String> values = <String, String>{};
   bool failReads = false;
   bool failWrites = false;
+  bool failDeletes = false;
 
   @override
   Future<String?> read(String key) async {
@@ -31,7 +32,10 @@ class _MemorySecrets implements SecretStore {
   }
 
   @override
-  Future<void> delete(String key) async => values.remove(key);
+  Future<void> delete(String key) async {
+    if (failDeletes) throw StateError('keystore unavailable');
+    values.remove(key);
+  }
 }
 
 void main() {
@@ -73,6 +77,26 @@ void main() {
       await storage.persistSession('session-of-A'); // must not throw
       expect(storage.isHealthy, isFalse);
       expect(secrets.values, isEmpty);
+    });
+
+    test('a failed delete blanks the blob, so sign-out cannot fail open', () async {
+      final _MemorySecrets secrets = _MemorySecrets();
+      final SecureSessionStorage storage = SecureSessionStorage(secrets);
+      await storage.persistSession('session-of-A');
+      secrets.failDeletes = true;
+      await storage.removePersistedSession();
+      expect(await storage.accessToken(), isNull);
+      expect(secrets.values.values, isNot(contains('session-of-A')));
+      expect(storage.isHealthy, isFalse);
+    });
+
+    test('if neither delete nor overwrite works the error surfaces (no silent sign-out)', () async {
+      final _MemorySecrets secrets = _MemorySecrets();
+      final SecureSessionStorage storage = SecureSessionStorage(secrets);
+      await storage.persistSession('session-of-A');
+      secrets.failDeletes = true;
+      secrets.failWrites = true;
+      await expectLater(storage.removePersistedSession(), throwsStateError);
     });
 
     test('session code never uses the ordinary key-value store', () {

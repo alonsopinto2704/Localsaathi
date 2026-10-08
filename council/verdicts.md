@@ -37,3 +37,21 @@ EVIDENCE USED: none, capped at FIX FIRST
 - **Investor:** No clear payer — sponsored placement and billing are off by design (guess: later ₹99–299/month featured slots). Running cost low (Supabase ~$25–109/month, sourced from phase-016 template, unverified). Real cost is provider acquisition by field visits (guess: hours per provider); first revenue not before a dense pilot.
 
 **Website:** the static `showcase/` demo was deleted on 2026-10-07 at the owner's request; testing uses the Flutter web build (port 5174); the production Astro site (phases 141–160) should wait for the flip condition — a site with no dense listings has nothing to show search engines or visitors.
+
+## 2026-10-08 — LocalSaathi before phases 061–100 (live adapters + media/trust)
+
+**Earlier verdict (2026-10-07):** FIX FIRST — flip = desk test + 10 real providers. **What changed:** phases 041–060 (identity) done locally; desk test still not run; owner chose to continue to phase 100.
+
+```
+VERDICT: FIX FIRST
+BIGGEST RISK: Cold start — zero providers and users; the founder doesn't control the remaining blockers (Supabase project, SMS vendor/DLT, QA and language reviewers), so engineering keeps running ahead of evidence.
+10-MINUTE TEST: Search Google Maps + JustDial for "plumber Andheri West"; call/WhatsApp 5 numbers; tally stale/unreachable/upsell-gated; ask the 5 if they'd list free on a no-lead-selling directory.
+FLIP TO BUILD: Desk test passes (>=2/5 stale or >=3/5 want a free listing) AND 10 providers in one category agree to list AND a Supabase staging project exists so phases 061–100 can be verified live, not only with fakes.
+EVIDENCE USED: none, capped at FIX FIRST
+```
+
+- **Skeptic (blind):** Top risk is that no one wants it; also, the founder doesn't control the blockers, and JustDial/GBP/WhatsApp are free. Says building 61–100 now is a mistake.
+- **Believer:** 61–100 cost no money until staging is provisioned, and live adapters are the cheapest way to put the wedge in front of real providers. Must be true: incumbent listings are stale, 10+ providers can be signed up by hand, providers keep availability fresh.
+- **Investor:** No clear payer. Later, featured placement at ₹99–299/month (guess); fixed cost ₹2.1k–9.3k/month (sourced phase 016, unverified), so break-even needs ~21–94 paying providers (derived). First revenue: no date.
+
+**Effect on plan:** 061–100 continue on the owner's instruction, but each phase is "Done locally" only; the 080/100 gates stay Blocked until staging exists.

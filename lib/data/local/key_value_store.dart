@@ -91,6 +91,7 @@ class StorageKeys {
   static const String promotionInterest = '${prefix}promotion_interest';
   static const String recentSearches = '${prefix}recent_searches';
   static const String onboardingCompleted = '${prefix}onboarding_completed';
+  static const String publicRefCache = '${prefix}public_ref_cache';
 
   /// Explicit list so [KeyValueStore.clearAppKeys] is exhaustive rather than
   /// prefix-guessing on a platform API that has no prefix delete.
@@ -110,6 +111,7 @@ class StorageKeys {
     promotionInterest,
     recentSearches,
     onboardingCompleted,
+    publicRefCache,
   ];
 }
 

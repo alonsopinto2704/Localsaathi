@@ -6,7 +6,10 @@
 //    idempotency key, and any other field (a "victim" id) is ignored;
 //  * recent authentication is required for the first request (a grant minted
 //    by public.request_sensitive_action); retries of an existing job are not
-//    blocked, so a dropped response cannot strand a half-deleted user;
+//    blocked while the job is fresh (10 min, same key), so a dropped response
+//    cannot strand a half-deleted user; later, a different key, or no grant
+//    is refused (reauth_required / conflict) and the owner can cancel via
+//    public.cancel_account_deletion;
 //  * one deletion state per user (public.begin_account_deletion);
 //  * order: storage objects first, auth user last, so a failure before the
 //    auth delete leaves a fully working account the user can retry;
@@ -20,7 +23,7 @@ export interface DeleteResponse {
 
 export type BeginResult =
   | { ok: true; jobId: string; status: string; resumed: boolean }
-  | { ok: false; reason: "reauth_required" | "failed" };
+  | { ok: false; reason: "reauth_required" | "conflict" | "failed" };
 
 export interface DeleteDeps {
   /** Verify the bearer token with Auth; the user id, or null. */
@@ -70,9 +73,9 @@ export async function handleDeleteAccount(
     return json(500, { error: "delete_failed" });
   }
   if (!begun.ok) {
-    return begun.reason === "reauth_required"
-      ? json(403, { error: "reauth_required" })
-      : json(500, { error: "delete_failed" });
+    if (begun.reason === "reauth_required") return json(403, { error: "reauth_required" });
+    if (begun.reason === "conflict") return json(409, { error: "deletion_in_progress" });
+    return json(500, { error: "delete_failed" });
   }
   if (begun.status === "completed") {
     return json(200, { ok: true, jobId: begun.jobId, status: "completed" });

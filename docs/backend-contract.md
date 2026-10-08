@@ -133,9 +133,9 @@ Behaviours the client now relies on:
 | `my_account()` | `phoneE164` is always E.164 with `+` (was GoTrue's `+`-less form until 0024). |
 | Recent authentication | `public.request_sensitive_action(action)` (`phone_change`, `delete_account`, `export_private_evidence`) succeeds only if the token's `amr` shows an SMS/TOTP proof within 5 minutes, else `reauth_required:`. A grant lasts 10 minutes and is single use. |
 | Phone change | Starting a change is blocked by an `auth.users` trigger unless a `phone_change` grant exists. When it commits, the profile keeps its owner, `phone_display_consented`/`whatsapp_enabled` reset, a published listing pauses, consent rows for the new number are written, and `phone_changed` is audited (no numbers). |
-| Administrators | `is_admin()` = `app_admins` row + a role in `private.admin_roles` + `aal2`. Roles: `support`, `moderation`, `credential_review`, `infrastructure`. Sensitive admin RPCs also need a TOTP proof under 15 minutes old. |
-| Recovery | `open_recovery_case`, `my_recovery_notices`, `dispute_recovery_case` (authenticated); `admin_recovery_queue`, `admin_review_recovery_case`, `admin_execute_recovery` (support role). 7-day wait, owner dispute freezes. |
-| Deletion | `delete-account` Edge Function: body is `{idempotencyKey}` only; 403 `reauth_required`, 401 `not_authenticated`, 502 `delete_failed`; one job per user (`private.deletion_jobs`). |
+| Administrators | `is_admin()` = `app_admins` row + a role in `private.admin_roles` + `aal2`. Roles: `support`, `moderation`, `credential_review`, `infrastructure`. Sensitive admin RPCs also need a TOTP proof under 15 minutes old. Since 0050 every admin write/read surface is role-gated: moderation (`set_listing_moderation`, report queue), infrastructure (`admin_audit_events`, promotions, raw engagement events, admin list, city/category/flag RPCs), support (city requests, recovery), credential_review (`record_credential_review`). Reference data has no direct-write policy. |
+| Recovery | `open_recovery_case`, `my_recovery_notices`, `dispute_recovery_case` (authenticated); `admin_recovery_queue`, `admin_review_recovery_case`, `admin_execute_recovery` (support role). 7-day wait, owner dispute freezes; the executor must differ from the approving reviewer (0051). |
+| Deletion | `delete-account` Edge Function: body is `{idempotencyKey}` only; 403 `reauth_required`, 401 `not_authenticated`, 502 `delete_failed`; one job per user (`private.deletion_jobs`); 409 `deletion_in_progress` for a different key; resume after 10 minutes needs a fresh grant; `rpc('cancel_account_deletion')` abandons an unfinished job (0052). |
 | New error prefix | `reauth_required:` -> `RepositoryErrorCode.reauthRequired`; transport/5xx -> `RepositoryErrorCode.unavailable` (client-side only). |
 
 Operations: `docs/identity-operations.md`. SMS vendor: `docs/sms-provider-evaluation.md`.
@@ -355,7 +355,7 @@ reason)`, which is audited.
 The rate-limit "source" is `u:<user id>` or a daily-rotating hash of the edge
 client IP: a throttle, not an identity.
 
-**Admin RPCs** (each checks `is_admin()` -> `not_owner` otherwise; each writes
+**Admin RPCs** (each checks its administrator role, see §Administrators, -> `not_owner` otherwise; each writes
 an append-only audit event in the same transaction):
 
 | Operation | Call | Notes |

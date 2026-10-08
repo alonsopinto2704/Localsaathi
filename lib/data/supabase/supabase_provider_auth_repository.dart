@@ -8,6 +8,7 @@ import 'auth_gateway.dart';
 import 'otp_challenge_book.dart';
 import 'otp_cooldown.dart';
 import 'session_refresher.dart';
+import 'wire.dart';
 
 /// Live phone-OTP identity on top of an [AuthGateway] (phases 041-057).
 ///
@@ -392,9 +393,9 @@ class SupabaseProviderAuthRepository
         await _endLocalSession();
         return;
       }
-      throw _toRepositoryError(error);
+      throw repositoryErrorForGateway(error);
     } on GatewayRpcException catch (error) {
-      throw _toRepositoryRpcError(error);
+      throw repositoryErrorForRpc(error);
     }
     if (result['ok'] != true) {
       throw const RepositoryException(RepositoryErrorCode.unavailable);
@@ -422,46 +423,11 @@ class SupabaseProviderAuthRepository
       await _refresher.ensureFresh();
       return await op();
     } on GatewayException catch (error) {
-      throw _toRepositoryError(error);
+      throw repositoryErrorForGateway(error);
     } on GatewayRpcException catch (error) {
-      throw _toRepositoryRpcError(error);
+      throw repositoryErrorForRpc(error);
     }
   }
-
-  static RepositoryException _toRepositoryError(GatewayException error) =>
-      switch (error.kind) {
-        GatewayErrorKind.sessionRevoked =>
-          const RepositoryException(RepositoryErrorCode.notAuthenticated),
-        GatewayErrorKind.reauthRequired =>
-          const RepositoryException(RepositoryErrorCode.reauthRequired),
-        GatewayErrorKind.forbidden =>
-          const RepositoryException(RepositoryErrorCode.notOwner),
-        GatewayErrorKind.phoneConflict =>
-          const RepositoryException(RepositoryErrorCode.conflict),
-        _ => const RepositoryException(RepositoryErrorCode.unavailable),
-      };
-
-  static RepositoryException _toRepositoryRpcError(GatewayRpcException error) =>
-      switch (error.prefix) {
-        'not_authenticated' =>
-          const RepositoryException(RepositoryErrorCode.notAuthenticated),
-        'reauth_required' =>
-          const RepositoryException(RepositoryErrorCode.reauthRequired),
-        'not_owner' => const RepositoryException(RepositoryErrorCode.notOwner),
-        'not_found' => const RepositoryException(RepositoryErrorCode.notFound),
-        'validation_failed' =>
-          const RepositoryException(RepositoryErrorCode.validationFailed),
-        'conflict' => const RepositoryException(RepositoryErrorCode.conflict),
-        'location_not_active' =>
-          const RepositoryException(RepositoryErrorCode.locationNotActive),
-        'listing_not_publishable' =>
-          const RepositoryException(RepositoryErrorCode.listingNotPublishable),
-        'category_not_allowed' =>
-          const RepositoryException(RepositoryErrorCode.categoryNotAllowed),
-        'suspended' =>
-          const RepositoryException(RepositoryErrorCode.suspended),
-        _ => const RepositoryException(RepositoryErrorCode.unavailable),
-      };
 
   PhoneInputError? _validate(String rawPhone) {
     if (rawPhone.trim().isEmpty) return PhoneInputError.empty;

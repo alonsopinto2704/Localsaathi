@@ -121,3 +121,15 @@ test('thrown internals never reach the response', async () => {
   assert.equal(res.status, 500);
   assert.doesNotMatch(JSON.stringify(res.body), /hunter2|relation|private/);
 });
+
+test('a resume the database refuses (different key / stale job) maps to 409 / 403 and touches nothing', async () => {
+  const w = world();
+  w.deps.begin = async () => ({ ok: false, reason: 'conflict' });
+  const conflict = await call(w);
+  assert.equal(conflict.status, 409);
+  assert.deepEqual(conflict.body, { error: 'deletion_in_progress' });
+  w.deps.begin = async () => ({ ok: false, reason: 'reauth_required' });
+  assert.equal((await call(w)).status, 403);
+  assert.deepEqual(w.storageCleaned, []);
+  assert.deepEqual(w.authDeleted, []);
+});

@@ -23,12 +23,19 @@ class LocationController extends ChangeNotifier {
   City? _activeCity;
   bool _isLoading = true;
   String? _errorMessage;
+  LocationSelection? _unavailableSelection;
 
   /// The customer's chosen locality and city, once resolved.
   LocationSelection? get selection => _selection;
 
   /// The live market the app is currently browsing.
   City? get activeCity => _activeCity;
+
+  /// The customer's previous choice when it no longer resolves (market
+  /// deactivated, locality removed). The app moved to the launch market's
+  /// default instead; the UI should say so and offer a deliberate pick rather
+  /// than relocate silently (phase 063). Null when the choice was kept.
+  LocationSelection? get unavailableSelection => _unavailableSelection;
 
   bool get isLoading => _isLoading;
 
@@ -43,6 +50,7 @@ class LocationController extends ChangeNotifier {
   Future<void> load() async {
     _isLoading = true;
     _errorMessage = null;
+    _unavailableSelection = null;
     notifyListeners();
 
     try {
@@ -61,6 +69,7 @@ class LocationController extends ChangeNotifier {
           cityId: restored.cityId,
           localityId: restored.localityId,
         );
+        _unavailableSelection = verified == null ? restored : null;
         restored = verified;
       }
 
@@ -99,6 +108,7 @@ class LocationController extends ChangeNotifier {
     if (resolved == null) return false;
 
     _selection = resolved;
+    _unavailableSelection = null;
     _activeCity = await _locations.cityById(cityId);
     await _kv.setJson(StorageKeys.selectedLocation, resolved.toJson());
     notifyListeners();

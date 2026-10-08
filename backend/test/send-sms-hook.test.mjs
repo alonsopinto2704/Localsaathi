@@ -20,7 +20,7 @@ function signed(b, { id = 'msg_1', ts = NOW / 1000, secret = SECRET_BYTES } = {}
   return { body: b, headers: { id, timestamp: String(ts), signature: `v1,${sig}` } };
 }
 const gate = (answer = { allowed: true }) => {
-  const g = { checked: [], recorded: [], check: async (p) => (g.checked.push(p), answer), record: async (o) => void g.recorded.push(o) };
+  const g = { checked: [], recorded: [], phones: [], check: async (p) => (g.checked.push(p), answer), record: async (o, p) => void (g.recorded.push(o), g.phones.push(p)) };
   return g;
 };
 
@@ -141,4 +141,23 @@ test('live mode refuses incomplete or non-https provider configuration', () => {
   assert.equal(providerConfigFromEnv(env({ SMS_PROVIDER_URL: 'http://x', SMS_PROVIDER_AUTH_KEY: 'k', SMS_DLT_TEMPLATE_ID: 't' })), null);
   assert.equal(providerConfigFromEnv(env({ SMS_PROVIDER_URL: 'https://x', SMS_PROVIDER_AUTH_KEY: '', SMS_DLT_TEMPLATE_ID: 't' })), null);
   assert.equal(parseProviderResponse(200, 'not json'), 'delivered');
+});
+
+test('the outcome is reported with the number so a rejected send can be refunded; a breaker-opening refusal logs an alert', async () => {
+  const g = gate();
+  await handleSendSms(signed(body()), { secret: SECRET, gate: g, sender: createFakeSender('rejected'), nowMs: NOW });
+  assert.deepEqual(g.recorded, ['rejected']);
+  assert.deepEqual(g.phones, ['+919000012345']);
+  const logged = [];
+  const orig = console.error;
+  console.error = (...a) => logged.push(a.join(' '));
+  try {
+    const paused = gate({ allowed: false, reason: 'service_paused', breakerOpened: true });
+    const res = await handleSendSms(signed(body()), { secret: SECRET, gate: paused, sender: createFakeSender(), nowMs: NOW });
+    assert.equal(res.status, 503);
+  } finally {
+    console.error = orig;
+  }
+  assert.ok(logged.some((l) => /ALERT otp_breaker_opened/.test(l)));
+  assert.ok(!logged.some((l) => l.includes('9000012345')), 'the alert never carries the number');
 });

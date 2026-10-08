@@ -35,10 +35,10 @@ const gate: Gate = {
     // If the gate cannot answer, do not send: unbounded spend is the failure
     // this exists to prevent.
     if (error || !data) return { allowed: false, reason: "service_paused" };
-    return { allowed: !!data.allowed, reason: data.reason, retryAfterSeconds: data.retryAfterSeconds };
+    return { allowed: !!data.allowed, reason: data.reason, retryAfterSeconds: data.retryAfterSeconds, breakerOpened: !!data.breakerOpened };
   },
-  async record(outcome) {
-    await admin.rpc("otp_record_delivery", { p_outcome: outcome });
+  async record(outcome, phone) {
+    await admin.rpc("otp_record_delivery", { p_outcome: outcome, p_phone: phone });
   },
 };
 

@@ -78,8 +78,14 @@ class SecureSessionStorage extends LocalStorage {
   Future<void> removePersistedSession() async {
     try {
       await _store.delete(key);
+      return;
     } on Object {
       _healthy = false;
     }
+    // Delete failed: blank the blob so the old tokens cannot come back
+    // ([accessToken] treats empty as absent). If even that fails, rethrow so
+    // the caller knows the session may survive and can retry; it must not
+    // report a clean sign-out.
+    await _store.write(key, '');
   }
 }

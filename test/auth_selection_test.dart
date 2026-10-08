@@ -60,6 +60,24 @@ void main() {
         isA<MockProviderAuthRepository>(),);
   });
 
+  test('unset LS_ENV: demo in debug, blocked in release (fail closed)', () {
+    expect(AuthConfig.resolve(rawEnv: '', release: false).isDemo, isTrue);
+    final AuthConfig release = AuthConfig.resolve(
+      rawEnv: '',
+      release: true,
+      supabaseUrl: https,
+      anonKey: goodKey,
+    );
+    expect(release.isDemo, isFalse);
+    expect(release.problem, contains('LS_ENV'));
+    expect(
+      selectAuthRepository(config: release, demo: demo, live: live),
+      isNot(isA<MockProviderAuthRepository>()),
+    );
+    // An explicit value is honoured in release.
+    expect(AuthConfig.resolve(rawEnv: 'demo', release: true).isDemo, isTrue);
+  });
+
   test('demo uses the mock even when live config is present', () {
     final AuthConfig config = AuthConfig(
       environment: AuthEnvironment.demo,

@@ -217,6 +217,15 @@ enum RepositoryErrorCode {
   suspended,
   conflict,
 
+  /// Too many requests; the caller should wait before trying again.
+  rateLimited,
+
+  /// The feature is switched off server-side.
+  featureDisabled,
+
+  /// A required consent has not been given.
+  consentRequired,
+
   /// The action needs a recent sign-in; the caller must re-verify first.
   reauthRequired,
 

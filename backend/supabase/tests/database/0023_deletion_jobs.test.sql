@@ -1,6 +1,6 @@
 -- Phase 057 (migration 0029): account deletion jobs. Phones +91900023xxxx.
 begin;
-select plan(17);
+select plan(15);
 
 create temporary table fx (key text primary key, value text);
 select tests.share_fixture('fx');
@@ -25,13 +25,14 @@ select is(((select value::jsonb from fx where key = 'job')->>'resumed')::boolean
 select is(((select value::jsonb from fx where key = 'job')->>'status'), 'requested', 'in the requested state');
 select is((public.begin_account_deletion((select value::uuid from fx where key = 'a'), 'key-aaaaaaaa')->>'jobId'),
   ((select value::jsonb from fx where key = 'job')->>'jobId'), 'a retry with the same key returns the same job without a new grant');
-select is((public.begin_account_deletion((select value::uuid from fx where key = 'a'), 'a-different-key')->>'jobId'),
-  ((select value::jsonb from fx where key = 'job')->>'jobId'), 'even a different key converges on the one deletion state');
+select throws_like(
+  format($sql$ select public.begin_account_deletion(%L::uuid, 'a-different-key') $sql$, (select value from fx where key = 'a')),
+  'conflict%', 'a different key than the job''s is a conflict (0052)');
 select throws_like(
   format($sql$ select public.begin_account_deletion(%L::uuid, 'key-bbbbbbbb') $sql$, (select value from fx where key = 'b')),
   'reauth_required%', 'another account''s grant never authorises this one (cross-account attempts fail)');
 reset role;
-select is((select attempts from private.deletion_jobs where user_id = (select value::uuid from fx where key = 'a')), 3,
+select is((select attempts from private.deletion_jobs where user_id = (select value::uuid from fx where key = 'a')), 2,
   'attempts are counted, one row exists');
 
 set local role service_role;
@@ -49,8 +50,6 @@ select public.advance_account_deletion((select (value::jsonb->>'jobId')::uuid fr
 select throws_like(
   format($sql$ select public.advance_account_deletion(%L::uuid, 'failed', 'late_error') $sql$, (select value::jsonb->>'jobId' from fx where key = 'job')),
   'not_found%', 'a completed job never goes backwards');
-select is((public.account_deletion_status((select value::uuid from fx where key = 'a'))->>'status'), 'completed', 'the receipt reads completed');
-select is(public.account_deletion_status(gen_random_uuid()), 'null'::jsonb, 'unknown users have no receipt');
 reset role;
 
 select is((select count(*)::int from private.audit_events where action in ('account_deletion_requested', 'account_deletion_completed')

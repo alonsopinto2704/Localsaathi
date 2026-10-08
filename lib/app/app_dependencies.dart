@@ -6,6 +6,12 @@ import '../data/repositories/mock_profile_support_repositories.dart';
 import '../data/repositories/mock_provider_repository.dart';
 import '../data/repositories/mock_report_and_engagement_repositories.dart';
 import '../data/repositories/mock_service_catalog_repository.dart';
+import '../data/supabase/auth_bootstrap.dart';
+import '../data/supabase/auth_config.dart';
+import '../data/live/live_location_repository.dart';
+import '../data/live/live_provider_repository.dart';
+import '../data/live/live_saved_provider_repository.dart';
+import '../data/live/live_service_catalog_repository.dart';
 import '../domain/repositories/auth_repository.dart';
 import '../domain/repositories/engagement_repository.dart';
 import '../domain/repositories/location_repository.dart';
@@ -13,6 +19,18 @@ import '../domain/repositories/profile_support_repositories.dart';
 import '../domain/repositories/provider_repository.dart';
 import '../domain/repositories/report_repository.dart';
 import '../domain/repositories/service_catalog_repository.dart';
+
+/// A staging/production build has no usable backend. The app shows a blocked
+/// screen with [reason]; it never falls back to the mocks. [reason] holds no
+/// secret values.
+class BackendBlockedException implements Exception {
+  const BackendBlockedException(this.reason);
+
+  final String reason;
+
+  @override
+  String toString() => 'BackendBlockedException($reason)';
+}
 
 /// Composition root.
 ///
@@ -94,6 +112,73 @@ class AppDependencies {
       consents: MockConsentRepository(store: dataStore),
       verification: MockVerificationRepository(store: dataStore),
       credentials: MockCredentialRepository(store: dataStore),
+    );
+  }
+
+  /// Picks the graph for a build (phase 061): `demo` is the mock graph (the
+  /// default for `flutter run`/tests); `staging` and `production` are the live
+  /// graph or a [BackendBlockedException]. A broken configuration or a failed
+  /// SDK start never degrades to mocks, and [keyValueStore] only holds local
+  /// preferences, so a storage failure cannot change which data is shown.
+  static Future<AppDependencies> forEnvironment({
+    required AuthConfig config,
+    required KeyValueStore keyValueStore,
+    bool persist = true,
+    DateTime? now,
+    Future<LiveBackend?> Function(AuthConfig, KeyValueStore)? startBackend,
+  }) async {
+    if (config.isDemo) {
+      return mock(keyValueStore: keyValueStore, persist: persist, now: now);
+    }
+    final String? problem = config.problem;
+    if (problem != null) throw BackendBlockedException(problem);
+    await keyValueStore.init();
+    final LiveBackend? backend =
+        await (startBackend ?? startLiveBackend)(config, keyValueStore);
+    if (backend == null) {
+      throw const BackendBlockedException('the backend client failed to start');
+    }
+    return _live(keyValueStore, backend, now);
+  }
+
+  /// Live graph. Locations, catalog, discovery, owner profile, bookmarks and
+  /// identity are backend-backed. The remaining repositories (reports,
+  /// engagement, promotions, consents, verification, credentials) are still
+  /// the mock implementations over an EMPTY, unseeded store until their
+  /// phases land: they hold no fictional providers but also do not reach the
+  /// backend yet.
+  static AppDependencies _live(
+    KeyValueStore kv,
+    LiveBackend backend,
+    DateTime? now,
+  ) {
+    final MockDataStore empty =
+        MockDataStore(now: now, seed: false, persist: false);
+    final LiveLocationRepository locations = LiveLocationRepository(
+      gateway: backend.data,
+      store: kv,
+      now: now == null ? null : () => now,
+    );
+    final LiveProviderRepository providers =
+        LiveProviderRepository(gateway: backend.data, locations: locations);
+    return AppDependencies._(
+      keyValueStore: kv,
+      dataStore: empty,
+      locations: locations,
+      catalog: LiveServiceCatalogRepository(gateway: backend.data),
+      providers: providers,
+      auth: backend.auth,
+      savedProviders: LiveSavedProviderRepository(
+        keyValueStore: kv,
+        providers: providers,
+      ),
+      drafts: MockProviderDraftRepository(keyValueStore: kv),
+      reports: MockReportRepository(store: empty),
+      engagement: MockEngagementRepository(store: empty),
+      promotions: MockPromotionRepository(store: empty, keyValueStore: kv),
+      consents: MockConsentRepository(store: empty),
+      verification: MockVerificationRepository(store: empty),
+      credentials: MockCredentialRepository(store: empty),
     );
   }
 

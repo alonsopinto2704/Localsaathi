@@ -26,6 +26,10 @@ class ProviderSearchController extends ChangeNotifier {
   Object? _error;
   bool _hasLoadedOnce = false;
 
+  /// Bumped per request so a slow, superseded response cannot overwrite the
+  /// results of a newer query (phase 065).
+  int _requestId = 0;
+
   ProviderQuery? get query => _query;
 
   /// Sponsored items first, then organic results. The flag travels with each
@@ -63,21 +67,24 @@ class ProviderSearchController extends ChangeNotifier {
     final ProviderQuery? query = _query;
     if (query == null) return;
 
+    final int id = ++_requestId;
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      _results = await _repository.search(query);
+      final ProviderSearchResults results = await _repository.search(query);
+      if (id != _requestId) return;
+      _results = results;
       _hasLoadedOnce = true;
     } on Object catch (error) {
+      if (id != _requestId) return;
       _error = error;
       _results = const ProviderSearchResults.empty();
       _hasLoadedOnce = true;
-    } finally {
-      _isLoading = false;
-      notifyListeners();
     }
+    _isLoading = false;
+    notifyListeners();
   }
 
   /// Records a profile view. Fire-and-forget: analytics must never block or

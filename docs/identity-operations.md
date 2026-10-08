@@ -23,8 +23,14 @@ select public.otp_breaker_reset();          -- service role / SQL editor, audite
 select day, metric, n from private.otp_stats order by day desc, metric;  -- aggregate counters
 ```
 
-**Alerting is not wired** (no hosted project). Required at deployment: an
-alert on any new `otp_breaker_opened` audit row and on `denied_*` counters
+A send the provider **rejects** gives the number's quota back (the hook reports
+the outcome with the number); a **timeout** does not, because the SMS may have
+been delivered and billed. The call that opens the breaker also logs
+`send-sms-hook: ALERT otp_breaker_opened` (no number) in the Edge Function logs.
+The block is `+91` and six digits (9 characters).
+
+**Alert delivery is not wired** (no hosted project). Required at deployment: an
+alert on any new `otp_breaker_opened` audit row (or that log line) and on `denied_*` counters
 rising sharply (owner: backend/security engineer). Until then the ceilings
 bound the loss: worst case is the global daily ceiling times the per-message
 price (see `docs/sms-provider-evaluation.md`). Schedule
@@ -68,12 +74,26 @@ revoke the user's sessions in the dashboard.
   `admin_recovery_queue()`, records a decision with a written rationale
   (`admin_review_recovery_case`), the 7-day wait runs (the real owner can
   `dispute_recovery_case`, which freezes it), then support runs
-  `admin_execute_recovery`. A frozen case is never executed: it must be
+  `admin_execute_recovery`. The executor must be a **different** support
+  administrator than the one who approved (two-person rule, migration 0051).
+  Opening a case is limited per claimant (3/day, 2 per listing per 30 days),
+  never per listing; a fifth case on one listing in 30 days writes the audit
+  event `recovery_listing_flood` for support to look at. A frozen case is never executed: it must be
   rejected and, if the claimant is genuine, reopened after the owner is
   reached.
 * Support must contact the listing's business through an independent channel
   (an address or landline from before the incident), never the new number
   alone. Public facts are not proof.
+* **Access tokens outlive recovery.** `admin_execute_recovery` deletes the
+  owner's `auth.sessions` (refresh tokens die at once) but an access JWT that
+  was already issued stays valid until it expires (`jwt_expiry`, 3600 s in
+  `config.toml`): a thief's session can still act for up to one hour after the
+  transfer. The phone-change trigger has already paused the listing and reset
+  consent, which limits what that token can do, but support should treat the
+  hour after execution as "still exposed" (for example do not unpause or
+  re-publish on the owner's behalf until it has passed). Do not shorten
+  `jwt_expiry` project-wide for this; if recovery volume warrants it, add a
+  per-account check instead.
 
 ## 4. Reviewer access without a back door (phase 056)
 
@@ -101,7 +121,13 @@ revoke the user's sessions in the dashboard.
 one job per user (`private.deletion_jobs`), deletes storage, then the auth user
 (cascading the listing), and answers with stable codes only. After success the
 token is dead (401): the app treats a 401 on a retry of its own deletion as
-"done". Job receipts hold user id + timestamps only and are purged after 30 days.
+"done" (there is no receipt lookup; `account_deletion_status` was removed in
+0052). Job receipts hold user id + timestamps only and are purged after 30 days.
+
+A retry with the same key within 10 minutes resumes the job. After that, resuming
+needs a fresh `delete_account` grant like starting does, a different key is 409
+`deletion_in_progress`, and the signed-in owner can abandon an unfinished job
+with `rpc('cancel_account_deletion')` (storage already removed is not restored).
 
 ## 6. Staging verification checklist (phase 060, not yet done)
 

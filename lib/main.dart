@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'app/app_dependencies.dart';
+import 'app/backend_blocked_app.dart';
 import 'app/local_saathi_app.dart';
 import 'core/config/app_config.dart';
 import 'data/local/key_value_store.dart';
-import 'data/supabase/auth_bootstrap.dart';
 import 'data/supabase/auth_config.dart';
 
 /// Entry point.
@@ -14,33 +14,51 @@ import 'data/supabase/auth_config.dart';
 /// The dependency graph is built before the first frame so the app opens with a
 /// resolved location instead of flashing an empty shell. Persistence failures
 /// degrade to in-memory storage rather than crashing on start-up, which matters
-/// on low-end devices where storage can be evicted.
+/// on low-end devices where storage can be evicted. A staging/production build
+/// without a usable backend shows a blocked screen, never mock data.
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   _registerLicences();
 
-  final AppDependencies dependencies = await _buildDependencies();
-
-  runApp(LocalSaathiApp(dependencies: dependencies));
+  runApp(await _buildApp());
 }
 
-Future<AppDependencies> _buildDependencies() async {
+Future<Widget> _buildApp() async {
+  final AuthConfig config = AuthConfig.fromEnvironment();
+  // Local preferences are separate from the backend: if storage cannot open,
+  // preferences live in memory for this run, in every environment.
+  KeyValueStore store;
+  bool persist = true;
   try {
-    final SharedPreferencesStore store = await SharedPreferencesStore.open();
-    return await AppDependencies.mock(
-      keyValueStore: store,
-      auth: await buildLiveAuth(AuthConfig.fromEnvironment(), store),
-    );
+    store = await SharedPreferencesStore.open();
   } on Object catch (error, stack) {
-    // Never block the app on local storage. The user gets a working directory
-    // that simply forgets between launches, which is far better than a crash.
     debugPrint(
       '${AppConfig.appName}: falling back to in-memory storage '
       '($error)\n$stack',
     );
-    return AppDependencies.mock(
-      keyValueStore: InMemoryKeyValueStore(),
-      persist: false,
+    store = InMemoryKeyValueStore();
+    persist = false;
+  }
+  try {
+    return LocalSaathiApp(
+      dependencies: await AppDependencies.forEnvironment(
+        config: config,
+        keyValueStore: store,
+        persist: persist,
+      ),
+    );
+  } on BackendBlockedException catch (blocked) {
+    return BackendBlockedApp(reason: blocked.reason);
+  } on Object catch (error) {
+    // Demo keeps working from memory; a live build never falls back to mocks.
+    if (!config.isDemo) {
+      return BackendBlockedApp(reason: 'start-up failed (${error.runtimeType})');
+    }
+    return LocalSaathiApp(
+      dependencies: await AppDependencies.mock(
+        keyValueStore: InMemoryKeyValueStore(),
+        persist: false,
+      ),
     );
   }
 }

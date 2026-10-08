@@ -18,13 +18,15 @@ export interface GateAnswer {
   allowed: boolean;
   reason?: string;
   retryAfterSeconds?: number;
+  /** True only on the call that opened the global circuit breaker. */
+  breakerOpened?: boolean;
 }
 
 export interface Gate {
   /** public.otp_send_gate: per-number, per-block and global limits + breaker. */
   check(phoneE164: string): Promise<GateAnswer>;
-  /** public.otp_record_delivery: a counter only. */
-  record(outcome: SendResult): Promise<void>;
+  /** public.otp_record_delivery: a counter; a rejected send also refunds that number's quota. */
+  record(outcome: SendResult, phoneE164: string): Promise<void>;
 }
 
 export interface HookResponse {
@@ -134,6 +136,8 @@ export async function handleSendSms(
   // refusal says nothing about whether the number has an account.
   const verdict = await deps.gate.check(phone);
   if (!verdict.allowed) {
+    // Log-based alert (the gate also writes the audit row otp_breaker_opened).
+    if (verdict.breakerOpened) console.error("send-sms-hook: ALERT otp_breaker_opened");
     const paused = verdict.reason === "service_paused";
     return {
       status: paused ? 503 : 429,
@@ -153,7 +157,7 @@ export async function handleSendSms(
     deps.sendTimeoutMs ?? 4000,
     "timeout",
   );
-  await deps.gate.record(result).catch(() => {});
+  await deps.gate.record(result, phone).catch(() => {});
 
   switch (result) {
     case "delivered":

@@ -10,7 +10,7 @@ insert into fx values ('owner', tests.create_phone_user('+919000000701')::text);
 insert into fx select 'a', tests.create_published_provider(
   (select value::uuid from fx where key = 'owner'), '+919000000701', 'Projection Listing')::text;
 
-update public.provider_profiles set map_lat = 19.07612, map_lng = 72.87771
+update public.provider_profiles set map_lat = 19.07612, map_lng = 72.87771, location_mode = 'approximate_pin'
   where id = (select value::uuid from fx where key = 'a');
 
 -- Rejected credential: present in the owner view, absent from the public one.

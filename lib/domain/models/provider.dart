@@ -552,6 +552,9 @@ class ProviderProfile {
     this.isDemoProfile = false,
     this.pinCodes = const <String>[],
     this.mapLocation,
+    this.revision,
+    this.isModerationSuspended = false,
+    this.isPubliclyListed,
   });
 
   final String id;
@@ -607,6 +610,19 @@ class ProviderProfile {
   /// or workshop). Null means "not shown": the default, and what withdrawing
   /// consent restores. The coordinates are deleted, not just hidden.
   final GeoPoint? mapLocation;
+
+  /// Server row revision, present only in the owner shape. Sent back as
+  /// `expectedRevision` so an edit made from stale state is refused instead of
+  /// overwriting a newer change or a moderation decision (phase 069).
+  final int? revision;
+
+  /// Owner shape only: moderation (not the owner) has suspended the listing.
+  /// The owner cannot lift this; "resume" must not be offered (phase 070).
+  final bool isModerationSuspended;
+
+  /// Owner shape only: the server's own verdict on whether customers can see
+  /// this listing right now (null = not known, e.g. public/mock profiles).
+  final bool? isPubliclyListed;
 
   // ------------------------------------------------------------- derived
   bool get isPubliclyVisible => status.isPubliclyVisible;
@@ -704,6 +720,9 @@ class ProviderProfile {
       pinCodes: pinCodes ?? this.pinCodes,
       mapLocation:
           clearMapLocation ? null : (mapLocation ?? this.mapLocation),
+      revision: revision,
+      isModerationSuspended: isModerationSuspended,
+      isPubliclyListed: isPubliclyListed,
     );
   }
 
@@ -795,6 +814,9 @@ class ProviderProfile {
           .whereType<String>()
           .toList(),
       mapLocation: GeoPoint.fromJson(json['mapLocation']),
+      revision: (json['revision'] as num?)?.toInt(),
+      isModerationSuspended: json['moderationStatus'] == 'suspended',
+      isPubliclyListed: json['isPubliclyListed'] as bool?,
     );
   }
 

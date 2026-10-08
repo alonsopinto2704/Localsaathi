@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show kReleaseMode;
+
 /// Which identity backend a build talks to. Chosen once, at compile time, with
 /// `--dart-define=LS_ENV=demo|staging|production`.
 ///
@@ -25,15 +27,36 @@ class AuthConfig {
     required this.environment,
     this.supabaseUrl = '',
     this.anonKey = '',
+    this.envUnset = false,
   });
+
+  /// Pure form of the compile-time rule so tests can exercise it: an unset
+  /// `LS_ENV` is demo in debug/profile, and a [problem] (never demo) in a
+  /// release build, so a pipeline that forgets the define cannot ship the
+  /// fixed-OTP demo.
+  factory AuthConfig.resolve({
+    required String rawEnv,
+    required bool release,
+    String supabaseUrl = '',
+    String anonKey = '',
+  }) {
+    final bool unset = rawEnv.trim().isEmpty;
+    return AuthConfig(
+      environment: unset
+          ? (release ? AuthEnvironment.production : AuthEnvironment.demo)
+          : AuthEnvironment.parse(rawEnv),
+      supabaseUrl: supabaseUrl,
+      anonKey: anonKey,
+      envUnset: unset && release,
+    );
+  }
 
   /// Reads `--dart-define` values. The default is [AuthEnvironment.demo] so
   /// `flutter run` and `flutter test` keep working with mocks (mock mode stays
   /// the default); release pipelines must pass `LS_ENV` explicitly.
-  factory AuthConfig.fromEnvironment() => AuthConfig(
-        environment: AuthEnvironment.parse(
-          const String.fromEnvironment('LS_ENV', defaultValue: 'demo'),
-        ),
+  factory AuthConfig.fromEnvironment() => AuthConfig.resolve(
+        rawEnv: const String.fromEnvironment('LS_ENV'),
+        release: kReleaseMode,
         supabaseUrl: const String.fromEnvironment('SUPABASE_URL'),
         anonKey: const String.fromEnvironment('SUPABASE_ANON_KEY'),
       );
@@ -41,12 +64,14 @@ class AuthConfig {
   final AuthEnvironment environment;
   final String supabaseUrl;
   final String anonKey;
+  final bool envUnset;
 
   bool get isDemo => environment == AuthEnvironment.demo;
 
   /// Why live auth cannot start, or null when the configuration is usable.
   /// Never includes the key or URL values.
   String? get problem {
+    if (envUnset) return 'LS_ENV is not set in a release build';
     final Uri? uri = Uri.tryParse(supabaseUrl);
     if (uri == null || !uri.hasAuthority || uri.host.isEmpty) {
       return 'SUPABASE_URL is missing or not a URL';

@@ -34,3 +34,13 @@ test('mutation: Dart code outside the demo graph reading the OTP constant, or a 
   assert.equal(checkDartSources({ 'lib/core/config/app_config.dart': 'static const String developmentOtpCode = "1";' }).length, 0);
   assert.equal(checkDartSources({ 'lib/a.dart': 'const key = SERVICE_ROLE_KEY;' }).length, 1);
 });
+
+test('production profile: the SMS hook must be enabled, env-referenced and https; local/demo config still passes', () => {
+  assert.deepEqual(checkConfigToml(config), [], 'default (local/demo) profile passes with the hook disabled');
+  assert.ok(checkConfigToml(config, { production: true }).some((p) => /not enabled/.test(p)), 'repo config as-is fails production');
+  const enabled = config.replace(/enabled = false\s+uri = "http:\/\/host\.docker\.internal:54321/, 'enabled = true\nuri = "https://example.supabase.co');
+  assert.deepEqual(checkConfigToml(enabled, { production: true }), [], 'enabled + env secret + https passes production');
+  assert.ok(checkConfigToml(enabled.replace('secrets = "env(SEND_SMS_HOOK_SECRET)"', 'secrets = "inline"'), { production: true }).length >= 1, 'inline secret fails');
+  assert.ok(checkConfigToml(enabled.replace('secrets = "env(SEND_SMS_HOOK_SECRET)"', ''), { production: true }).some((p) => /not env/.test(p)), 'missing secret fails');
+  assert.ok(checkConfigToml(enabled.replace('https://example', 'http://example'), { production: true }).some((p) => /https/.test(p)), 'http uri fails');
+});

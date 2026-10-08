@@ -78,9 +78,9 @@ select is(
   (public.otp_send_gate('+919000180002', timestamptz '2026-10-11 10:00+00'))::text,
   'registered and unregistered numbers get the identical gate answer');
 
--- Privacy of the log: no phone number, only a 32-byte keyed hash and an 8-char block.
+-- Privacy of the log: no phone number, only a 32-byte keyed hash and a 9-char block.
 select is(
-  (select count(*)::int from private.otp_send_log where length(block) <> 8 or length(phone_hash) <> 32),
+  (select count(*)::int from private.otp_send_log where length(block) <> 9 or length(phone_hash) <> 32),
   0, 'the send log holds no phone number');
 
 -- Callability.

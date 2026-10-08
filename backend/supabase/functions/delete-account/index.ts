@@ -9,11 +9,12 @@
 //   Authorization: Bearer <the caller's own access token>
 //   { "idempotencyKey": "<8-64 URL-safe chars, reused on retry>" }
 //   -> 200 { ok, jobId, status }   403 { error: "reauth_required" }
-//      401 { error: "not_authenticated" }   502 { error: "delete_failed", jobId }
+//      401 { error: "not_authenticated" }   409 { error: "deletion_in_progress" }   502 { error: "delete_failed", jobId }
 //
 // Call public.request_sensitive_action('delete_account') first (the app does);
-// without a fresh grant the first request is refused. A retry after a dropped
-// response, or after success (401, the user no longer exists), is safe.
+// without a fresh grant the first request is refused. A retry with the same key
+// within 10 minutes resumes; later it needs a fresh grant again (a different key
+// is 409). After success the retry is a 401 (the user no longer exists).
 //
 // Deploy: supabase functions deploy delete-account
 import { createClient } from "jsr:@supabase/supabase-js@2";
@@ -62,7 +63,8 @@ Deno.serve(async (req: Request) => {
         if (error) {
           // Log the stable prefix only; the message may name internals.
           console.error("delete-account: begin failed", String(error.message).split(":")[0]);
-          return { ok: false, reason: String(error.message).startsWith("reauth_required") ? "reauth_required" : "failed" };
+          const code = String(error.message).split(":")[0];
+          return { ok: false, reason: code === "reauth_required" || code === "conflict" ? code : "failed" };
         }
         return { ok: true, jobId: data.jobId, status: data.status, resumed: !!data.resumed };
       },

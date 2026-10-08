@@ -587,6 +587,9 @@ class SessionController extends ChangeNotifier {
         RepositoryErrorCode.suspended => 'errorUnknown',
         RepositoryErrorCode.conflict => duplicateNumberMessageKey,
         RepositoryErrorCode.reauthRequired => 'reauthRequired',
+        RepositoryErrorCode.rateLimited => 'otpRateLimited',
+        RepositoryErrorCode.featureDisabled => 'featureDisabled',
+        RepositoryErrorCode.consentRequired => 'consentShowPhoneRequired',
         RepositoryErrorCode.unavailable => 'errorUnknown',
       };
 }
